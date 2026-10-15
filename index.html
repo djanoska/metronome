@@ -8,6 +8,7 @@
     :root {
       --bg: #0d1117;
       --card-bg: #161b22;
+      --panel-bg: #11151c;
       --border: #30363d;
       --accent: #58a6ff;
       --accent-strong: #1f6feb;
@@ -215,7 +216,7 @@
 
     /* Auto BPM Létra doboz */
     .ladder-panel {
-      background: #11151c;
+      background: var(--panel-bg);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 0.75rem;
@@ -288,90 +289,6 @@
       color: #fff;
     }
 
-    /* Mikrofonos Ritmus-pontosságértékelő doboz */
-    .mic-panel {
-      background: #131b26;
-      border: 1px solid #1f3b5c;
-      border-radius: 10px;
-      padding: 0.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-    }
-
-    .mic-status-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .accuracy-badge {
-      font-size: 0.85rem;
-      font-weight: 700;
-      padding: 0.2rem 0.6rem;
-      border-radius: 6px;
-      background: #21262d;
-      color: #8b949e;
-      transition: all 0.15s ease;
-    }
-
-    .accuracy-badge.perfect {
-      background: rgba(46, 160, 67, 0.2);
-      color: var(--accuracy-perfect);
-      border: 1px solid var(--accuracy-perfect);
-    }
-    .accuracy-badge.early {
-      background: rgba(241, 224, 90, 0.2);
-      color: var(--accuracy-early);
-      border: 1px solid var(--accuracy-early);
-    }
-    .accuracy-badge.late {
-      background: rgba(255, 123, 114, 0.2);
-      color: var(--accuracy-late);
-      border: 1px solid var(--accuracy-late);
-    }
-
-    .mic-controls {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
-    .mic-toggle-btn {
-      background: #21262d;
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 0.45rem 0.7rem;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.75rem;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
-
-    .mic-toggle-btn.active {
-      background: #1f6feb;
-      border-color: #58a6ff;
-      color: #fff;
-    }
-
-    .level-meter-wrapper {
-      flex: 1;
-      height: 8px;
-      background: #21262d;
-      border-radius: 4px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      position: relative;
-    }
-
-    .level-bar {
-      height: 100%;
-      width: 0%;
-      background: var(--strum-up);
-      transition: width 0.05s linear;
-    }
-
     /* Vizuális visszajelző sáv */
     .beat-indicators {
       display: flex;
@@ -426,7 +343,7 @@
     .strum-down .strum-arrow { color: var(--strum-down-dim); }
     .strum-up .strum-arrow { color: var(--strum-up-dim); }
 
-    /* Villanási állapotok pengetési színkóddal */
+    /* Villanási állapotok */
     .beat-col.active {
       transform: scale(1.15);
     }
@@ -493,6 +410,168 @@
     }
 
     .tap-btn:active { background: #30363d; }
+
+    /* ========================================================
+       KÜLÖNÁLLÓ ALSÓ BLOKK: GITÁR ÉRZÉKELŐ ÉS PONTOSSÁGMÉRŐ
+       ======================================================== */
+    .guitar-bottom-card {
+      margin-top: 0.5rem;
+      background: linear-gradient(180deg, #131b26 0%, #0d131a 100%);
+      border: 1px solid #1f3b5c;
+      border-radius: 14px;
+      padding: 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .guitar-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .guitar-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #58a6ff;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .accuracy-badge {
+      font-size: 0.85rem;
+      font-weight: 800;
+      padding: 0.25rem 0.7rem;
+      border-radius: 6px;
+      background: #21262d;
+      color: #8b949e;
+      transition: all 0.15s ease;
+      letter-spacing: 0.05em;
+    }
+
+    .accuracy-badge.perfect {
+      background: rgba(46, 160, 67, 0.25);
+      color: var(--accuracy-perfect);
+      border: 1px solid var(--accuracy-perfect);
+      box-shadow: 0 0 10px rgba(46, 160, 67, 0.3);
+    }
+    .accuracy-badge.early {
+      background: rgba(241, 224, 90, 0.25);
+      color: var(--accuracy-early);
+      border: 1px solid var(--accuracy-early);
+      box-shadow: 0 0 10px rgba(241, 224, 90, 0.2);
+    }
+    .accuracy-badge.late {
+      background: rgba(255, 123, 114, 0.25);
+      color: var(--accuracy-late);
+      border: 1px solid var(--accuracy-late);
+      box-shadow: 0 0 10px rgba(255, 123, 114, 0.2);
+    }
+
+    .guitar-controls-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .mic-main-btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: var(--text-bright);
+      padding: 0.6rem 0.9rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .mic-main-btn.active {
+      background: #1f6feb;
+      border-color: #58a6ff;
+      box-shadow: 0 0 12px rgba(31, 111, 235, 0.4);
+    }
+
+    .meter-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .meter-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      color: #8b949e;
+      text-transform: uppercase;
+    }
+
+    .level-meter-wrapper {
+      height: 9px;
+      background: #0d1117;
+      border-radius: 5px;
+      overflow: hidden;
+      border: 1px solid #30363d;
+    }
+
+    .level-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #58a6ff 0%, #00d2ee 80%, #ff3b56 100%);
+      transition: width 0.04s linear;
+    }
+
+    /* Finomhangoló csúszkák */
+    .calib-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 0.65rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .calib-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .calib-item-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      color: #8b949e;
+      text-transform: uppercase;
+    }
+
+    .calib-item input[type=range] {
+      accent-color: #58a6ff;
+      height: 5px;
+    }
+
+    .guitar-stats-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #8b949e;
+      padding-top: 0.1rem;
+    }
+
+    .guitar-stats-row .highlight {
+      color: #ffffff;
+      font-variant-numeric: tabular-nums;
+    }
   </style>
 </head>
 <body>
@@ -606,24 +685,6 @@
       </div>
     </div>
 
-    <!-- Gitár Ritmus-pontosságértékelő (Mikrofon + Sávszűrő) -->
-    <div class="mic-panel">
-      <div class="mic-status-row">
-        <span class="group-header" style="color: #58a6ff;">Gitár Érzékelő (Sávszűrővel)</span>
-        <div class="accuracy-badge" id="accuracyBadge">Inaktív</div>
-      </div>
-      <div class="mic-controls">
-        <button class="mic-toggle-btn" id="micToggleBtn">🎙️ Mikrofon: KI</button>
-        <div class="level-meter-wrapper" title="Gitár bemeneti jelszint">
-          <div class="level-bar" id="micLevelBar"></div>
-        </div>
-      </div>
-      <div class="group-header" style="font-size: 0.7rem; color: #8b949e;">
-        <span id="accuracyStats">Pontosság: --% (0 találat)</span>
-        <span id="offsetFeedback">0 ms</span>
-      </div>
-    </div>
-
     <!-- Session Timer (5 - 10 - 15 perc) -->
     <div class="control-group">
       <div class="group-header">
@@ -645,6 +706,55 @@
       <button class="primary-btn" id="playBtn">Indítás</button>
       <button class="tap-btn" id="tapBtn">TAP</button>
     </div>
+
+    <!-- ========================================================
+         KÜLÖNÁLLÓ BLOKK A LEGALJÁN: GITÁR ÉRZÉKELŐ ÉS PONTOSSÁGMÉRŐ
+         ======================================================== -->
+    <section class="guitar-bottom-card">
+      <div class="guitar-header-row">
+        <div class="guitar-title">
+          <span>🎸 Gitár Ritmus-pontosságmérő</span>
+        </div>
+        <div class="accuracy-badge" id="accuracyBadge">Inaktív</div>
+      </div>
+
+      <div class="guitar-controls-row">
+        <button class="mic-main-btn" id="micToggleBtn">🎙️ Érzékelő: KI</button>
+        <div class="meter-container">
+          <div class="meter-label-row">
+            <span>Bemeneti jelszint</span>
+            <span id="levelValue">0%</span>
+          </div>
+          <div class="level-meter-wrapper">
+            <div class="level-bar" id="micLevelBar"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Késleltetés kalibráció & Érzékenység csúszkák -->
+      <div class="calib-grid">
+        <div class="calib-item">
+          <div class="calib-item-header">
+            <span>Késleltetés (Offset)</span>
+            <span id="offsetLabel" style="color: #58a6ff; font-weight:700;">−60 ms</span>
+          </div>
+          <input type="range" id="latencySlider" min="-150" max="50" value="-60" step="5">
+        </div>
+
+        <div class="calib-item">
+          <div class="calib-item-header">
+            <span>Érzékenység</span>
+            <span id="sensLabel" style="color: #58a6ff; font-weight:700;">Közepes</span>
+          </div>
+          <input type="range" id="sensitivitySlider" min="1" max="100" value="65">
+        </div>
+      </div>
+
+      <div class="guitar-stats-row">
+        <span>Pontosság: <span class="highlight" id="accuracyStats">--% (0 találat)</span></span>
+        <span>Eltérés: <span class="highlight" id="offsetFeedback">0 ms</span></span>
+      </div>
+    </section>
   </main>
 
   <script>
@@ -692,7 +802,7 @@
         this.bufferChime = null;
 
         this.notesInQueue = [];
-        this.scheduledBeatsHistory = []; // Legutóbbi ütemek a gitáros pontosságméréshez
+        this.scheduledBeatsHistory = [];
 
         this.onTick = null;
         this.onBpmAutoChange = null;
@@ -902,9 +1012,9 @@
           wheelsOff: wheelsAreOff
         });
 
-        // Eltároljuk az ütemeket a mikrofonos pengetés időzítésének összevetéséhez
+        // Ütemezett hangok elmentése a gitár összehasonlításhoz
         this.scheduledBeatsHistory.push({ time: time, step: stepNumber });
-        if (this.scheduledBeatsHistory.length > 32) {
+        if (this.scheduledBeatsHistory.length > 36) {
           this.scheduledBeatsHistory.shift();
         }
 
@@ -977,22 +1087,25 @@
       }
     }
 
-    // --- MIKROFONOS GITÁR DETEKTOR ÉS SÁVSZŰRŐ ENGINE ---
+    // --- FINOMÍTOTT GITÁR ÉRZÉKELŐ ÉS SÁVSZŰRŐ ENGINE ---
     class GuitarDetector {
       constructor(audioCtx, metronomeEngine) {
         this.audioCtx = audioCtx;
         this.metronome = metronomeEngine;
         this.stream = null;
         this.source = null;
-        this.hpFilter = null; // Felüláteresztő szűrő (mély morgás ellen)
-        this.lpFilter = null; // Aluláteresztő szűrő (metronóm klikk levágása)
+        this.hpFilter = null;
+        this.lpFilter = null;
         this.analyser = null;
         this.isActive = false;
 
         this.dataArray = null;
         this.lastStrumTime = 0;
-        this.strumThreshold = 0.085; // Dinamikus RMS küszöbérték gitárhoz
-        this.debounceTime = 0.12; // 120ms minimális szünet két pengetés között
+        this.debounceTime = 0.11; // 110ms minimális időköz két akkord/pengetés között
+
+        // Kalibrációs beállítások
+        this.latencyOffsetMs = -60; // Telefonos késleltetés kompenzáció (ms)
+        this.threshold = 0.045;     // Dinamikus érzékenységi szint
 
         // Statisztikák
         this.totalStrums = 0;
@@ -1006,27 +1119,33 @@
           if (!this.audioCtx) this.metronome.initAudio();
           this.audioCtx = this.metronome.audioCtx;
 
-          this.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          // TELEFONOS ZAJCSÖKKENTŐK ÉS BESZÉDFELISMERŐK TELJES KIKAPCSOLÁSA
+          const audioConstraints = {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+            latency: 0
+          };
+
+          this.stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints, video: false });
           this.source = this.audioCtx.createMediaStreamSource(this.stream);
 
-          // 1. Felüláteresztő szűrő: levágja a 80 Hz alatti mély dübörgést és asztalkopogást
+          // 1. Felüláteresztő szűrő: levágja a 70 Hz alatti dübörgést
           this.hpFilter = this.audioCtx.createBiquadFilter();
           this.hpFilter.type = 'highpass';
-          this.hpFilter.frequency.setValueAtTime(80, this.audioCtx.currentTime);
-          this.hpFilter.Q.setValueAtTime(0.7, this.audioCtx.currentTime);
+          this.hpFilter.frequency.setValueAtTime(70, this.audioCtx.currentTime);
 
-          // 2. Aluláteresztő szűrő: levágja a 750 Hz feletti sávot (így a metronóm 1200-1800 Hz-es klikkje nem jut be)
+          // 2. Tágabb aluláteresztő szűrő: 2500 Hz-ig átengedi a gitár közvetlen vonali tranzienseit
           this.lpFilter = this.audioCtx.createBiquadFilter();
           this.lpFilter.type = 'lowpass';
-          this.lpFilter.frequency.setValueAtTime(750, this.audioCtx.currentTime);
-          this.lpFilter.Q.setValueAtTime(0.7, this.audioCtx.currentTime);
+          this.lpFilter.frequency.setValueAtTime(2500, this.audioCtx.currentTime);
 
-          // 3. Analizátor a gitárhang tranzienseinek vizsgálatára
+          // 3. Analizátor a pengetés lecsapódásának mérésére
           this.analyser = this.audioCtx.createAnalyser();
           this.analyser.fftSize = 512;
           this.dataArray = new Float32Array(this.analyser.fftSize);
 
-          // Lánc: Mikrofon -> High-pass -> Low-pass -> Analyser (NEM kötjük a hangszóróra, nincs gerjedés!)
+          // Lánc: Bemenet -> Highpass -> Lowpass -> Analyser (nem kötjük hangszóróra!)
           this.source.connect(this.hpFilter);
           this.hpFilter.connect(this.lpFilter);
           this.lpFilter.connect(this.analyser);
@@ -1037,8 +1156,8 @@
           this.detectLoop();
           return true;
         } catch (err) {
-          console.error("Mikrofon hozzáférési hiba:", err);
-          alert("Nem sikerült elérni a mikrofont! Kérlek, engedélyezd a böngészőben.");
+          console.error("Mikrofon hiba:", err);
+          alert("Nem sikerült elérni a hangbemenetet! Ellenőrizd a böngésző engedélyeit.");
           return false;
         }
       }
@@ -1060,7 +1179,7 @@
 
         this.analyser.getFloatTimeDomainData(this.dataArray);
 
-        // RMS (effektív hangerő) számítás a szűrt gitársávon
+        // Effektív feszültség (RMS) számítás a szűrt vonalon
         let sum = 0;
         for (let i = 0; i < this.dataArray.length; i++) {
           sum += this.dataArray[i] * this.dataArray[i];
@@ -1068,13 +1187,13 @@
         const rms = Math.sqrt(sum / this.dataArray.length);
 
         if (this.onLevelUpdate) {
-          this.onLevelUpdate(Math.min(1.0, rms * 5.0)); // UI jelszint
+          this.onLevelUpdate(Math.min(1.0, rms * 6.5));
         }
 
         const now = this.audioCtx.currentTime;
 
-        // Pengetés tranziens érzékelése
-        if (rms > this.strumThreshold && (now - this.lastStrumTime) > this.debounceTime) {
+        // Pengetési ugrás észlelése
+        if (rms > this.threshold && (now - this.lastStrumTime) > this.debounceTime) {
           this.lastStrumTime = now;
           this.evaluateStrum(now);
         }
@@ -1082,33 +1201,36 @@
         requestAnimationFrame(() => this.detectLoop());
       }
 
-      evaluateStrum(strumTime) {
+      evaluateStrum(detectedTime) {
         if (!this.metronome.isPlaying || this.metronome.scheduledBeatsHistory.length === 0) {
           return;
         }
 
-        // Megkeressük a legközelebbi metronóm ütést az időben
+        // Késleltetés-kompenzáció alkalmazása: a beérkezett időből levonjuk/hozzáadjuk a telefon pufferkésését
+        const effectiveTime = detectedTime + (this.latencyOffsetMs / 1000.0);
+
+        // Megkeressük a legközelebbi ütemezett metronóm-kattintást
         let closestBeat = null;
         let minDiffMs = Infinity;
 
         for (const beat of this.metronome.scheduledBeatsHistory) {
-          const diffMs = (strumTime - beat.time) * 1000;
+          const diffMs = (effectiveTime - beat.time) * 1000;
           if (Math.abs(diffMs) < Math.abs(minDiffMs)) {
             minDiffMs = diffMs;
             closestBeat = beat;
           }
         }
 
-        // Csak akkor értékeljük, ha az ütés ±180 ms-os ablakában vagyunk
-        if (Math.abs(minDiffMs) <= 180) {
+        // Reális ritmuskapu (220 ms ablak)
+        if (Math.abs(minDiffMs) <= 220) {
           this.totalStrums++;
           let category = 'perfect';
 
-          // Kategorizálás: ±30 ms = Tökéletes, < -30 ms = Sietsz, > +30 ms = Késel
-          if (Math.abs(minDiffMs) <= 30) {
+          // Zeneileg reális ablak: +/- 45 ms a tökéletes találat
+          if (Math.abs(minDiffMs) <= 45) {
             category = 'perfect';
             this.perfectStrums++;
-          } else if (minDiffMs < -30) {
+          } else if (minDiffMs < -45) {
             category = 'early';
           } else {
             category = 'late';
@@ -1128,7 +1250,7 @@
       }
     }
 
-    // --- FELÜLETI VEZÉRLÉS ---
+    // --- FELÜLETI VEZÉRLÉS ÖSSZEKÖTÉSE ---
     const metronome = new MetronomeEngine();
     let detector = null;
 
@@ -1156,12 +1278,17 @@
     const btnPyramidToggle = document.getElementById('btnPyramidToggle');
     const ladderStatusText = document.getElementById('ladderStatusText');
 
-    // Mikrofon & Pontosság UI elemek
+    // Alsó gitáros blokk elemei
     const micToggleBtn = document.getElementById('micToggleBtn');
     const micLevelBar = document.getElementById('micLevelBar');
+    const levelValue = document.getElementById('levelValue');
     const accuracyBadge = document.getElementById('accuracyBadge');
     const accuracyStats = document.getElementById('accuracyStats');
     const offsetFeedback = document.getElementById('offsetFeedback');
+    const latencySlider = document.getElementById('latencySlider');
+    const offsetLabel = document.getElementById('offsetLabel');
+    const sensitivitySlider = document.getElementById('sensitivitySlider');
+    const sensLabel = document.getElementById('sensLabel');
 
     function updateBpm(newBpm) {
       metronome.setBpm(newBpm);
@@ -1239,13 +1366,18 @@
       ladderStatusText.textContent = dir > 0 ? `▲ Gyorsul (${newBpm})` : `▼ Lassul (${newBpm})`;
     };
 
-    // Mikrofon indítása / leállítása
+    // Gitár Érzékelő indítása / leállítása
     micToggleBtn.addEventListener('click', async () => {
       if (!detector) {
         detector = new GuitarDetector(metronome.audioCtx, metronome);
+        detector.latencyOffsetMs = parseInt(latencySlider.value, 10);
+
         detector.onLevelUpdate = (level) => {
-          micLevelBar.style.width = (level * 100) + '%';
+          const pct = Math.round(level * 100);
+          micLevelBar.style.width = pct + '%';
+          levelValue.textContent = pct + '%';
         };
+
         detector.onAccuracyResult = (res) => {
           accuracyBadge.className = 'accuracy-badge ' + res.category;
           if (res.category === 'perfect') {
@@ -1258,7 +1390,7 @@
 
           const sign = res.diffMs > 0 ? '+' : '';
           offsetFeedback.textContent = `${sign}${res.diffMs} ms`;
-          accuracyStats.textContent = `Pontosság: ${res.scorePercent}% (${res.totalStrums} pengetés)`;
+          accuracyStats.textContent = `${res.scorePercent}% (${res.totalStrums} pengetés)`;
         };
       }
 
@@ -1266,16 +1398,37 @@
         const ok = await detector.start();
         if (ok) {
           micToggleBtn.classList.add('active');
-          micToggleBtn.textContent = '🎙️ Mikrofon: BE';
+          micToggleBtn.textContent = '🎙️ Érzékelő: BE';
           accuracyBadge.textContent = 'Figyelés...';
         }
       } else {
         detector.stop();
         micToggleBtn.classList.remove('active');
-        micToggleBtn.textContent = '🎙️ Mikrofon: KI';
+        micToggleBtn.textContent = '🎙️ Érzékelő: KI';
         accuracyBadge.className = 'accuracy-badge';
         accuracyBadge.textContent = 'Inaktív';
         micLevelBar.style.width = '0%';
+        levelValue.textContent = '0%';
+      }
+    });
+
+    // Késleltetés és Érzékenység csúszkák
+    latencySlider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      offsetLabel.textContent = (val > 0 ? '+' : '') + val + ' ms';
+      if (detector) detector.latencyOffsetMs = val;
+    });
+
+    sensitivitySlider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      let label = 'Közepes';
+      if (val < 35) label = 'Alacsony';
+      else if (val > 75) label = 'Magas';
+      sensLabel.textContent = label;
+
+      // Érzékenység leképezése küszöbértékre: 100-as érték = 0.012 (nagyon érzékeny), 1-es érték = 0.16 (csak erős lecsapásra)
+      if (detector) {
+        detector.threshold = 0.16 - ((val / 100) * 0.145);
       }
     });
 
