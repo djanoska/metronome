@@ -311,7 +311,6 @@
       transition: opacity 0.3s ease, transform 0.08s ease;
     }
 
-    /* Fő ütés: Teli fehér korong */
     .beat-dot.main-beat {
       width: 14px;
       height: 14px;
@@ -322,7 +321,6 @@
       transition: transform 0.08s, background-color 0.08s, border-color 0.08s, box-shadow 0.08s;
     }
 
-    /* Szubdivízió: Csak fehér körív */
     .beat-dot.sub {
       width: 10px;
       height: 10px;
@@ -343,7 +341,6 @@
     .strum-down .strum-arrow { color: var(--strum-down-dim); }
     .strum-up .strum-arrow { color: var(--strum-up-dim); }
 
-    /* Villanási állapotok */
     .beat-col.active {
       transform: scale(1.15);
     }
@@ -412,7 +409,7 @@
     .tap-btn:active { background: #30363d; }
 
     /* ========================================================
-       KÜLÖNÁLLÓ ALSÓ BLOKK: GITÁR ÉRZÉKELŐ ÉS PONTOSSÁGMÉRŐ
+       KÜLÖNÁLLÓ BLOKK: GITÁR ÉRZÉKELŐ ÉS PONTOSSÁGMÉRŐ (BETA)
        ======================================================== */
     .guitar-bottom-card {
       margin-top: 0.5rem;
@@ -433,14 +430,26 @@
     }
 
     .guitar-title {
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.06em;
       color: #58a6ff;
       display: flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.45rem;
+    }
+
+    .beta-badge {
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      background: rgba(241, 224, 90, 0.15);
+      color: var(--gold);
+      border: 1px solid rgba(241, 224, 90, 0.4);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
 
     .accuracy-badge {
@@ -528,7 +537,6 @@
       transition: width 0.04s linear;
     }
 
-    /* Finomhangoló csúszkák */
     .calib-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -708,12 +716,13 @@
     </div>
 
     <!-- ========================================================
-         KÜLÖNÁLLÓ BLOKK A LEGALJÁN: GITÁR ÉRZÉKELŐ ÉS PONTOSSÁGMÉRŐ
+         KÜLÖNÁLLÓ BLOKK: GITÁR ÉRZÉKELŐ ÉS PONTOSSÁGMÉRŐ (BETA)
          ======================================================== -->
     <section class="guitar-bottom-card">
       <div class="guitar-header-row">
         <div class="guitar-title">
           <span>🎸 Gitár Ritmus-pontosságmérő</span>
+          <span class="beta-badge">BETA</span>
         </div>
         <div class="accuracy-badge" id="accuracyBadge">Inaktív</div>
       </div>
@@ -738,7 +747,7 @@
             <span>Késleltetés (Offset)</span>
             <span id="offsetLabel" style="color: #58a6ff; font-weight:700;">−60 ms</span>
           </div>
-          <input type="range" id="latencySlider" min="-150" max="50" value="-60" step="5">
+          <input type="range" id="latencySlider" min="-150" max="100" value="-60" step="5">
         </div>
 
         <div class="calib-item">
@@ -746,7 +755,7 @@
             <span>Érzékenység</span>
             <span id="sensLabel" style="color: #58a6ff; font-weight:700;">Közepes</span>
           </div>
-          <input type="range" id="sensitivitySlider" min="1" max="100" value="65">
+          <input type="range" id="sensitivitySlider" min="1" max="100" value="50">
         </div>
       </div>
 
@@ -1012,8 +1021,8 @@
           wheelsOff: wheelsAreOff
         });
 
-        // Ütemezett hangok elmentése a gitár összehasonlításhoz
-        this.scheduledBeatsHistory.push({ time: time, step: stepNumber });
+        // Ütemezett hangok elmentése evaluated = false flaggel
+        this.scheduledBeatsHistory.push({ time: time, step: stepNumber, evaluated: false });
         if (this.scheduledBeatsHistory.length > 36) {
           this.scheduledBeatsHistory.shift();
         }
@@ -1087,7 +1096,7 @@
       }
     }
 
-    // --- FINOMÍTOTT GITÁR ÉRZÉKELŐ ÉS SÁVSZŰRŐ ENGINE ---
+    // --- FINOMÍTOTT TRANZIENS DETEKTOR ÉS ÜTEM-ZÁROLÓ MOTOR ---
     class GuitarDetector {
       constructor(audioCtx, metronomeEngine) {
         this.audioCtx = audioCtx;
@@ -1101,11 +1110,12 @@
 
         this.dataArray = null;
         this.lastStrumTime = 0;
-        this.debounceTime = 0.11; // 110ms minimális időköz két akkord/pengetés között
+        this.debounceTime = 0.16; // 160ms minimális szünet az új lecsapódásig
 
-        // Kalibrációs beállítások
-        this.latencyOffsetMs = -60; // Telefonos késleltetés kompenzáció (ms)
-        this.threshold = 0.045;     // Dinamikus érzékenységi szint
+        // Tranziens- és ugrásfigyelő állapot
+        this.prevRms = 0;
+        this.latencyOffsetMs = -60;
+        this.threshold = 0.035;
 
         // Statisztikák
         this.totalStrums = 0;
@@ -1119,7 +1129,6 @@
           if (!this.audioCtx) this.metronome.initAudio();
           this.audioCtx = this.metronome.audioCtx;
 
-          // TELEFONOS ZAJCSÖKKENTŐK ÉS BESZÉDFELISMERŐK TELJES KIKAPCSOLÁSA
           const audioConstraints = {
             echoCancellation: false,
             noiseSuppression: false,
@@ -1130,22 +1139,18 @@
           this.stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints, video: false });
           this.source = this.audioCtx.createMediaStreamSource(this.stream);
 
-          // 1. Felüláteresztő szűrő: levágja a 70 Hz alatti dübörgést
           this.hpFilter = this.audioCtx.createBiquadFilter();
           this.hpFilter.type = 'highpass';
           this.hpFilter.frequency.setValueAtTime(70, this.audioCtx.currentTime);
 
-          // 2. Tágabb aluláteresztő szűrő: 2500 Hz-ig átengedi a gitár közvetlen vonali tranzienseit
           this.lpFilter = this.audioCtx.createBiquadFilter();
           this.lpFilter.type = 'lowpass';
-          this.lpFilter.frequency.setValueAtTime(2500, this.audioCtx.currentTime);
+          this.lpFilter.frequency.setValueAtTime(2200, this.audioCtx.currentTime);
 
-          // 3. Analizátor a pengetés lecsapódásának mérésére
           this.analyser = this.audioCtx.createAnalyser();
           this.analyser.fftSize = 512;
           this.dataArray = new Float32Array(this.analyser.fftSize);
 
-          // Lánc: Bemenet -> Highpass -> Lowpass -> Analyser (nem kötjük hangszóróra!)
           this.source.connect(this.hpFilter);
           this.hpFilter.connect(this.lpFilter);
           this.lpFilter.connect(this.analyser);
@@ -1153,11 +1158,12 @@
           this.isActive = true;
           this.totalStrums = 0;
           this.perfectStrums = 0;
+          this.prevRms = 0;
           this.detectLoop();
           return true;
         } catch (err) {
           console.error("Mikrofon hiba:", err);
-          alert("Nem sikerült elérni a hangbemenetet! Ellenőrizd a böngésző engedélyeit.");
+          alert("Nem sikerült elérni a hangbemenetet!");
           return false;
         }
       }
@@ -1179,7 +1185,6 @@
 
         this.analyser.getFloatTimeDomainData(this.dataArray);
 
-        // Effektív feszültség (RMS) számítás a szűrt vonalon
         let sum = 0;
         for (let i = 0; i < this.dataArray.length; i++) {
           sum += this.dataArray[i] * this.dataArray[i];
@@ -1192,8 +1197,14 @@
 
         const now = this.audioCtx.currentTime;
 
-        // Pengetési ugrás észlelése
-        if (rms > this.threshold && (now - this.lastStrumTime) > this.debounceTime) {
+        // Attack (meredekség) számítás: mekkorát ugrott a hangerő az előző mintához képest?
+        const delta = rms - this.prevRms;
+        this.prevRms = rms * 0.7 + this.prevRms * 0.3; // finom exponenciális követés
+
+        // Csak valódi új pengetés indít mérést (hirtelen felfutás + minimális szint)
+        const isAttackOnset = (delta > this.threshold * 0.45) && (rms > this.threshold);
+
+        if (isAttackOnset && (now - this.lastStrumTime) > this.debounceTime) {
           this.lastStrumTime = now;
           this.evaluateStrum(now);
         }
@@ -1206,13 +1217,12 @@
           return;
         }
 
-        // Késleltetés-kompenzáció alkalmazása: a beérkezett időből levonjuk/hozzáadjuk a telefon pufferkésését
         const effectiveTime = detectedTime + (this.latencyOffsetMs / 1000.0);
 
-        // Megkeressük a legközelebbi ütemezett metronóm-kattintást
         let closestBeat = null;
         let minDiffMs = Infinity;
 
+        // Megkeressük a legközelebbi ütemet
         for (const beat of this.metronome.scheduledBeatsHistory) {
           const diffMs = (effectiveTime - beat.time) * 1000;
           if (Math.abs(diffMs) < Math.abs(minDiffMs)) {
@@ -1221,8 +1231,14 @@
           }
         }
 
-        // Reális ritmuskapu (220 ms ablak)
-        if (Math.abs(minDiffMs) <= 220) {
+        // Ritmuskapu: +/- 190 ms ablak
+        if (closestBeat && Math.abs(minDiffMs) <= 190) {
+          // ÜTEM-ZÁROLÁS: Ha ezt az ütemet már leértékeltük, a lecsengő húr nem írhatja felül!
+          if (closestBeat.evaluated) {
+            return;
+          }
+          closestBeat.evaluated = true; // Zároljuk az ütemet
+
           this.totalStrums++;
           let category = 'perfect';
 
@@ -1322,278 +1338,4 @@
       silentToggleBtn.textContent = metronome.isSilent ? '🔊 Néma mód: BE' : '🔇 Néma mód: KI';
     });
 
-    btnTrainingWheels.addEventListener('click', () => {
-      metronome.trainingWheels = !metronome.trainingWheels;
-      btnTrainingWheels.classList.toggle('active', metronome.trainingWheels);
-    });
-
-    btnGapClick.addEventListener('click', () => {
-      metronome.gapClick = !metronome.gapClick;
-      btnGapClick.classList.toggle('active', metronome.gapClick);
-    });
-
-    btnRandomDrop.addEventListener('click', () => {
-      metronome.randomDrop = !metronome.randomDrop;
-      btnRandomDrop.classList.toggle('active', metronome.randomDrop);
-    });
-
-    btnLadderToggle.addEventListener('click', () => {
-      metronome.ladderEnabled = !metronome.ladderEnabled;
-      btnLadderToggle.classList.toggle('active', metronome.ladderEnabled);
-      btnLadderToggle.textContent = metronome.ladderEnabled ? 'Létra: BE' : 'Létra: KI';
-      updateLadderSettings();
-    });
-
-    btnPyramidToggle.addEventListener('click', () => {
-      metronome.pyramidEnabled = !metronome.pyramidEnabled;
-      btnPyramidToggle.classList.toggle('active', metronome.pyramidEnabled);
-      btnPyramidToggle.textContent = metronome.pyramidEnabled ? 'Piramis: BE' : 'Piramis: KI';
-    });
-
-    function updateLadderSettings() {
-      metronome.ladderStart = parseInt(ladderStartBpm.value, 10) || 80;
-      metronome.ladderTarget = parseInt(ladderTargetBpm.value, 10) || 130;
-      metronome.ladderStep = parseInt(ladderStep.value, 10) || 5;
-    }
-
-    [ladderStartBpm, ladderTargetBpm, ladderStep].forEach(el => {
-      el.addEventListener('change', updateLadderSettings);
-    });
-
-    metronome.onBpmAutoChange = (newBpm, dir) => {
-      bpmSlider.value = newBpm;
-      bpmInput.value = newBpm;
-      ladderStatusText.textContent = dir > 0 ? `▲ Gyorsul (${newBpm})` : `▼ Lassul (${newBpm})`;
-    };
-
-    // Gitár Érzékelő indítása / leállítása
-    micToggleBtn.addEventListener('click', async () => {
-      if (!detector) {
-        detector = new GuitarDetector(metronome.audioCtx, metronome);
-        detector.latencyOffsetMs = parseInt(latencySlider.value, 10);
-
-        detector.onLevelUpdate = (level) => {
-          const pct = Math.round(level * 100);
-          micLevelBar.style.width = pct + '%';
-          levelValue.textContent = pct + '%';
-        };
-
-        detector.onAccuracyResult = (res) => {
-          accuracyBadge.className = 'accuracy-badge ' + res.category;
-          if (res.category === 'perfect') {
-            accuracyBadge.textContent = 'TÖKÉLETES';
-          } else if (res.category === 'early') {
-            accuracyBadge.textContent = 'SIETSZ!';
-          } else {
-            accuracyBadge.textContent = 'KÉSEL!';
-          }
-
-          const sign = res.diffMs > 0 ? '+' : '';
-          offsetFeedback.textContent = `${sign}${res.diffMs} ms`;
-          accuracyStats.textContent = `${res.scorePercent}% (${res.totalStrums} pengetés)`;
-        };
-      }
-
-      if (!detector.isActive) {
-        const ok = await detector.start();
-        if (ok) {
-          micToggleBtn.classList.add('active');
-          micToggleBtn.textContent = '🎙️ Érzékelő: BE';
-          accuracyBadge.textContent = 'Figyelés...';
-        }
-      } else {
-        detector.stop();
-        micToggleBtn.classList.remove('active');
-        micToggleBtn.textContent = '🎙️ Érzékelő: KI';
-        accuracyBadge.className = 'accuracy-badge';
-        accuracyBadge.textContent = 'Inaktív';
-        micLevelBar.style.width = '0%';
-        levelValue.textContent = '0%';
-      }
-    });
-
-    // Késleltetés és Érzékenység csúszkák
-    latencySlider.addEventListener('input', (e) => {
-      const val = parseInt(e.target.value, 10);
-      offsetLabel.textContent = (val > 0 ? '+' : '') + val + ' ms';
-      if (detector) detector.latencyOffsetMs = val;
-    });
-
-    sensitivitySlider.addEventListener('input', (e) => {
-      const val = parseInt(e.target.value, 10);
-      let label = 'Közepes';
-      if (val < 35) label = 'Alacsony';
-      else if (val > 75) label = 'Magas';
-      sensLabel.textContent = label;
-
-      // Érzékenység leképezése küszöbértékre: 100-as érték = 0.012 (nagyon érzékeny), 1-es érték = 0.16 (csak erős lecsapásra)
-      if (detector) {
-        detector.threshold = 0.16 - ((val / 100) * 0.145);
-      }
-    });
-
-    // Session Timer vezérlés
-    document.querySelectorAll('#timerPresetsContainer .toggle-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#timerPresetsContainer .toggle-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const mins = parseInt(btn.dataset.time, 10);
-        metronome.timerMinutes = mins;
-
-        if (mins === 0) {
-          timerCountdown.textContent = 'Végtelen';
-        } else {
-          timerCountdown.textContent = `${mins}:00`;
-        }
-      });
-    });
-
-    metronome.onTimerUpdate = (msRemaining) => {
-      const totalSec = Math.ceil(msRemaining / 1000);
-      const m = Math.floor(totalSec / 60);
-      const s = totalSec % 60;
-      timerCountdown.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
-    };
-
-    metronome.onSessionComplete = () => {
-      playBtn.textContent = 'Indítás';
-      playBtn.classList.remove('playing');
-      clearHighlights();
-      timerCountdown.textContent = 'Idő lejárt!';
-    };
-
-    function renderIndicators() {
-      indicatorsContainer.innerHTML = '';
-      const totalSteps = metronome.beatsPerBar * metronome.subdivision;
-
-      for (let i = 0; i < totalSteps; i++) {
-        const col = document.createElement('div');
-        col.className = 'beat-col';
-
-        const isBeat = (i % metronome.subdivision === 0);
-        const dot = document.createElement('div');
-
-        if (isBeat) {
-          dot.className = 'beat-dot main-beat';
-        } else {
-          dot.className = 'beat-dot sub';
-          col.classList.add('is-subdivision');
-        }
-
-        const arrow = document.createElement('div');
-        arrow.className = 'strum-arrow';
-
-        const isDown = (metronome.strumPattern === 'down') || (i % 2 === 0);
-        if (isDown) {
-          col.classList.add('strum-down');
-          arrow.textContent = '↓';
-        } else {
-          col.classList.add('strum-up');
-          arrow.textContent = '↑';
-        }
-
-        col.appendChild(dot);
-        col.appendChild(arrow);
-        indicatorsContainer.appendChild(col);
-      }
-    }
-
-    document.querySelectorAll('#beatsContainer .toggle-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#beatsContainer .toggle-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        metronome.beatsPerBar = parseInt(btn.dataset.beats, 10);
-        metronome.currentStep = 0;
-        renderIndicators();
-      });
-    });
-
-    document.querySelectorAll('#subdivContainer .toggle-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#subdivContainer .toggle-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        metronome.subdivision = parseInt(btn.dataset.sub, 10);
-        metronome.currentStep = 0;
-        renderIndicators();
-      });
-    });
-
-    document.querySelectorAll('#strumContainer .toggle-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#strumContainer .toggle-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        metronome.strumPattern = btn.dataset.strum;
-        renderIndicators();
-      });
-    });
-
-    playBtn.addEventListener('click', () => {
-      if (!metronome.isPlaying) {
-        updateLadderSettings();
-        metronome.start();
-        playBtn.textContent = 'Leállítás';
-        playBtn.classList.add('playing');
-        trainerStatus.textContent = '';
-      } else {
-        metronome.stop();
-        playBtn.textContent = 'Indítás';
-        playBtn.classList.remove('playing');
-        clearHighlights();
-        indicatorsContainer.classList.remove('training-wheels-off');
-        trainerStatus.textContent = '';
-        ladderStatusText.textContent = '';
-      }
-    });
-
-    let tapTimes = [];
-    tapBtn.addEventListener('click', () => {
-      const now = performance.now();
-      if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > 2000) {
-        tapTimes = [];
-      }
-      tapTimes.push(now);
-      if (tapTimes.length > 4) tapTimes.shift();
-
-      if (tapTimes.length >= 2) {
-        const intervals = [];
-        for (let i = 1; i < tapTimes.length; i++) {
-          intervals.push(tapTimes[i] - tapTimes[i - 1]);
-        }
-        const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-        const calculatedBpm = Math.round(60000 / avgInterval);
-        updateBpm(calculatedBpm);
-      }
-    });
-
-    function clearHighlights() {
-      document.querySelectorAll('.beat-col').forEach(col => {
-        col.classList.remove('active');
-      });
-    }
-
-    metronome.onTick = (note) => {
-      const cols = indicatorsContainer.children;
-      clearHighlights();
-
-      if (note.wheelsOff) {
-        indicatorsContainer.classList.add('training-wheels-off');
-        trainerStatus.textContent = 'Önálló mód!';
-      } else {
-        indicatorsContainer.classList.remove('training-wheels-off');
-      }
-
-      if (cols[note.step] && !note.muted) {
-        cols[note.step].classList.add('active');
-      }
-    };
-
-    function renderLoop() {
-      metronome.updateVisuals();
-      requestAnimationFrame(renderLoop);
-    }
-    requestAnimationFrame(renderLoop);
-
-    renderIndicators();
-  </script>
-</body>
-</html>
+    btnTrainingWheels
