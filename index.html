@@ -1,463 +1,1058 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="system">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TempoCoach - Web Audio Metronome</title>
+  <title>TempoCoach 1.2 - Mechanical Pro Metronome</title>
   <style>
+    /* ========================================================
+       VINTAGE MECHANICAL THEMES (OBSIDIAN BRASS & IVORY GOLD)
+       ======================================================== */
     :root {
-      --bg: #0d1117; --card: #161b22; --panel: #11151c; --border: #30363d;
-      --accent: #58a6ff; --accent-str: #1f6feb; --text: #c9d1d9; --text-b: #ffffff;
-      --sub: #8b949e; --btn: #21262d; --btn-h: #30363d; --shadow: rgba(0,0,0,0.5);
-      --dot: #ffffff; --down: #ff3b56; --down-dim: rgba(255,59,86,0.4);
-      --up: #00d2ee; --up-dim: rgba(0,210,238,0.4);
-      --mode-bg: #3b2361; --mode-brd: #d2a8ff; --gold: #f1e05a;
-      --perf: #2ea043; --early: #f1e05a; --late: #ff7b72;
-      --pulse-glow: rgba(88, 166, 255, 0.55);
-      --pulse-border: #58a6ff;
-      --pulse-bg: #1d2938; /* Finom, áttetsző fátyol a sötét kártya fölött */
+      --bg: #0f1013;
+      --case-bg: linear-gradient(175deg, #18191f 0%, #111215 100%);
+      --chamber-bg: radial-gradient(circle at 50% 90%, #20232c 0%, #0a0b0e 100%);
+      --chamber-arc: #d4af37;
+      --plate-bg: rgba(18, 20, 26, 0.88);
+      --plate-border: #4a3e1a;
+      --plate-text: #d4af37;
+      --border: #282a35;
+      --gold: #d4af37;
+      --gold-light: #f5d77f;
+      --gold-glow: rgba(212, 175, 55, 0.45);
+      --text: #d8dbe2;
+      --text-dim: #767b8a;
+      --text-bright: #ffffff;
+      --btn-bg: #20222b;
+      --btn-border: #2f3340;
+      --nav-bg: rgba(18, 19, 24, 0.98);
+
+      /* Ütésfények */
+      --beat-off: #20232c;
+      --beat-off-border: #353947;
+      --beat-1-glow: #ffe875;
+      --beat-main-glow: #e5a924;
+      --beat-sub-glow: #ffffff;
+
+      --strum-down: #ff4766;
+      --strum-up: #00d2ee;
+      --pulse-glow: rgba(212, 175, 55, 0.6);
+      --pulse-border: #f5d77f;
+      --veil-color: radial-gradient(ellipse at 50% 50%, rgba(212, 175, 55, 0) 25%, rgba(212, 175, 55, 0.3) 70%, rgba(255, 215, 0, 0.55) 100%);
     }
+
     [data-theme="light"] {
-      --bg: #f4f6f8; --card: #ffffff; --panel: #f6f8fa; --border: #d0d7de;
-      --accent: #0969da; --accent-str: #0969da; --text: #24292f; --text-b: #0969da;
-      --sub: #57606a; --btn: #f3f4f6; --btn-h: #e5e7eb; --shadow: rgba(0,0,0,0.08);
-      --dot: #24292f; --down: #cf222e; --down-dim: rgba(207,34,46,0.35);
-      --up: #0969da; --up-dim: rgba(9,105,218,0.35);
-      --mode-bg: #f2eaff; --mode-brd: #8250df; --gold: #9a6700;
-      --perf: #1a7f37; --early: #9a6700; --late: #cf222e;
-      --pulse-glow: rgba(9, 105, 218, 0.4);
-      --pulse-border: #0969da;
-      --pulse-bg: #ebf3fc; /* Halvány jégkék fátyol világos módban */
+      --bg: #eae6df;
+      --case-bg: linear-gradient(175deg, #f7f5f0 0%, #e8e3d8 100%);
+      --chamber-bg: radial-gradient(circle at 50% 85%, #ffffff 0%, #ded5c2 100%);
+      --chamber-arc: #8a6210;
+      --plate-bg: rgba(246, 242, 233, 0.94);
+      --plate-border: #b89d62;
+      --plate-text: #6b4d08;
+      --border: #d2cbbe;
+      --gold: #b38622;
+      --gold-light: #d8aa3f;
+      --gold-glow: rgba(179, 134, 34, 0.35);
+      --text: #24221e;
+      --text-dim: #736d62;
+      --text-bright: #12100d;
+      --btn-bg: #f0ebe1;
+      --btn-border: #d4ccbd;
+      --nav-bg: rgba(235, 229, 219, 0.98);
+
+      --beat-off: #dcd4c3;
+      --beat-off-border: #b8ad96;
+      --beat-1-glow: #f59e0b;
+      --beat-main-glow: #c78607;
+      --beat-sub-glow: #706859;
+
+      --strum-down: #cf222e;
+      --strum-up: #0969da;
+
+      --pulse-glow: rgba(179, 134, 34, 0.45);
+      --pulse-border: #b38622;
+      --veil-color: radial-gradient(ellipse at 50% 50%, rgba(255, 255, 255, 0) 20%, rgba(212, 160, 40, 0.3) 65%, rgba(180, 115, 15, 0.6) 100%);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 1rem 0.6rem; transition: background 0.2s; }
-    .app-container { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 0.85rem; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Georgia", "Times New Roman", serif; -webkit-tap-highlight-color: transparent; }
 
-    #errorBanner { display: none; background: #da3633; color: #fff; padding: 0.6rem; border-radius: 8px; font-size: 0.75rem; }
-    .app-header, .metronome-card, .guitar-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 8px 24px var(--shadow); }
-    
-    .app-header { border-radius: 12px; padding: 0.55rem 0.9rem; display: flex; justify-content: space-between; align-items: center; }
-    .brand-title { font-size: 1rem; font-weight: 800; letter-spacing: 0.05em; color: var(--text-b); }
-    .brand-title span { color: var(--accent); }
-    .gear-btn { background: transparent; border: none; font-size: 1.15rem; cursor: pointer; color: var(--sub); padding: 0.2rem; line-height: 1; transition: transform 0.2s, color 0.2s; }
-    .gear-btn:hover { color: var(--text-b); transform: rotate(30deg); }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 0.5rem;
+      user-select: none;
+      transition: background 0.25s;
+    }
 
-    /* Fő kártya teljes blokk- és keretpulzálással */
-    .metronome-card {
-      padding: 1.2rem 1rem;
+    .phone-container {
+      width: 100%;
+      max-width: 410px;
+      height: 94vh;
+      max-height: 860px;
+      background: var(--case-bg);
+      border: 2px solid var(--border);
+      border-radius: 40px;
       display: flex;
       flex-direction: column;
-      gap: 0.85rem;
-      transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
 
-    @keyframes barTurnaroundPulse {
+    .pulse-veil {
+      position: absolute;
+      inset: 0;
+      background: var(--veil-color);
+      pointer-events: none;
+      opacity: 0;
+      z-index: 45;
+      transition: opacity 0.05s ease-out;
+    }
+    .pulse-veil.active {
+      opacity: 1;
+      transition: none;
+    }
+
+    @keyframes vintageTurnaroundPulse {
       0% {
         border-color: var(--pulse-border);
-        background-color: var(--pulse-bg);
-        box-shadow: 0 0 32px var(--pulse-glow), 0 8px 24px var(--shadow);
+        box-shadow: 0 0 45px var(--pulse-glow), inset 0 0 20px var(--pulse-glow), 0 24px 60px rgba(0, 0, 0, 0.65);
       }
       100% {
         border-color: var(--border);
-        background-color: var(--card);
-        box-shadow: 0 8px 24px var(--shadow);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65);
       }
     }
-
-    .metronome-card.pulse {
-      animation: barTurnaroundPulse 0.22s ease-out;
+    .phone-container.pulse {
+      animation: vintageTurnaroundPulse 0.24s ease-out;
     }
 
-    .guitar-card { padding: 1.1rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.1rem 1.6rem 0.3rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .brand-group {
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+    }
+    .brand-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      color: var(--text-bright);
+    }
+    .brand-title span { color: var(--gold); }
+    .version-tag {
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--gold);
+      background: rgba(212, 175, 55, 0.15);
+      padding: 1px 5px;
+      border-radius: 4px;
+      border: 1px solid var(--gold);
+    }
 
-    .tempo-display { text-align: center; }
-    .bpm-input { font-size: 3.8rem; font-weight: 800; color: var(--text-b); background: transparent; border: 1px dashed transparent; text-align: center; width: 155px; outline: none; line-height: 1; cursor: pointer; }
-    .bpm-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    .tempo-term { font-size: 0.82rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); margin-top: -0.2rem; }
-    .bpm-label { font-size: 0.68rem; text-transform: uppercase; color: var(--sub); letter-spacing: 0.08em; margin-top: 0.15rem; }
+    .top-mute-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--btn-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.05rem;
+      transition: all 0.15s;
+    }
+    .top-mute-btn.muted { background: #da3633; border-color: #f85149; color: #fff; }
 
-    .flex-row { display: flex; align-items: center; gap: 0.65rem; }
-
-    .slider-wrapper {
+    .content-area {
       flex: 1;
       display: flex;
       flex-direction: column;
-      position: relative;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.4rem 1.2rem 1.8rem;
     }
 
-    input[type=range] {
+    /* ========================================================
+       1. MECHANIKUS KAMRA, ARANY FÉLKÖRÍV ÉS HÚZHATÓ SÚLY
+       ======================================================== */
+    .metronome-chamber {
       width: 100%;
-      height: 7px;
-      appearance: none;
-      -webkit-appearance: none;
-      background: var(--border);
-      border-radius: 4px;
-      outline: none;
-      cursor: pointer;
-      margin: 4px 0 2px 0;
+      max-width: 330px;
+      height: 250px;
+      background: var(--chamber-bg);
+      border: 2px solid var(--plate-border);
+      border-radius: 120px 120px 16px 16px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 8px 24px rgba(0, 0, 0, 0.45), 0 6px 16px rgba(0, 0, 0, 0.2);
     }
-    input[type=range]::-webkit-slider-thumb {
-      appearance: none;
-      -webkit-appearance: none;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: var(--accent);
-      border: 2px solid #ffffff;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+
+    .chamber-scale {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 280px;
+      height: 130px;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .scale-arc-outer {
+      stroke: var(--chamber-arc);
+      stroke-width: 2.8;
+      fill: none;
+      opacity: 0.95;
+      filter: drop-shadow(0 0 4px var(--gold-glow));
+    }
+    .scale-arc-inner {
+      stroke: var(--chamber-arc);
+      stroke-width: 1.5;
+      stroke-dasharray: 3 4;
+      fill: none;
+      opacity: 0.75;
+    }
+
+    .chamber-engraved-plate {
+      position: absolute;
+      top: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 142px;
+      height: 195px;
+      background: var(--plate-bg);
+      border: 1.5px solid var(--plate-border);
+      border-radius: 8px;
+      box-shadow: inset 0 1px 3px rgba(255,255,255,0.08), 0 4px 14px rgba(0,0,0,0.4);
+      z-index: 2;
+      pointer-events: none;
+      padding: 6px 4px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .plate-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      line-height: 1;
+      padding: 0 4px;
+    }
+    .plate-bpm {
+      font-size: 7.5px;
+      font-weight: 700;
+      color: var(--plate-text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      width: 18px;
+    }
+    .plate-bpm.right { text-align: right; }
+    .plate-term {
+      font-size: 6.8px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--plate-text);
+      text-transform: uppercase;
+      opacity: 0.9;
+    }
+
+    .pendulum-pivot {
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      width: 4px;
+      height: 228px;
+      margin-left: -2px;
+      transform-origin: 50% 100%;
+      will-change: transform;
+      z-index: 10;
+    }
+
+    .pendulum-rod {
+      width: 3.5px;
+      height: 100%;
+      background: linear-gradient(90deg, #fceda2 0%, #c49927 60%, #87650e 100%);
+      box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+      margin: 0 auto;
+      position: relative;
+      border-radius: 2px;
+    }
+
+    .pendulum-weight {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 32px;
+      height: 26px;
+      background: linear-gradient(135deg, #fceeab 0%, #d4af37 40%, #7e5f15 100%);
+      border: 1.5px solid #ffe89e;
+      border-radius: 5px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
       cursor: grab;
+      touch-action: none;
+      z-index: 15;
       transition: transform 0.1s;
     }
-    input[type=range]::-webkit-slider-thumb:active {
-      transform: scale(1.15);
+    .pendulum-weight:active {
       cursor: grabbing;
+      transform: translateX(-50%) scale(1.08);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.8), 0 0 12px var(--gold);
     }
-    input[type=range]::-moz-range-thumb {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: var(--accent);
-      border: 2px solid #ffffff;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-      cursor: grab;
-    }
-
-    .slider-scale {
-      position: relative;
-      width: calc(100% - 20px);
-      margin: 2px auto 0 auto;
-      height: 18px;
-    }
-
-    .scale-mark {
+    .weight-crease {
       position: absolute;
-      transform: translateX(-50%);
+      top: 50%; left: 0; right: 0;
+      height: 1.5px;
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    /* ========================================================
+       2. ÉKKŐ SZEGECSEK & TELJES SZÉLESSÉGET KITÖLTŐ NYILAK
+       ======================================================== */
+    .beats-display-wrap {
+      width: 100%;
+      max-width: 360px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      cursor: pointer;
-      color: var(--sub);
-      user-select: none;
-      transition: color 0.15s;
-    }
-    .scale-mark:hover { color: var(--text-b); }
-    .scale-tick { width: 1.5px; height: 4px; background: var(--border); margin-bottom: 2px; }
-    .scale-num { font-size: 0.6rem; font-weight: 700; letter-spacing: -0.02em; }
-
-    .step-btn { background: var(--btn); border: 1px solid var(--border); color: var(--text-b); width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; flex-shrink: 0; }
-
-    .vol-row { background: var(--panel); border: 1px solid var(--border); border-radius: 9px; padding: 0.35rem 0.65rem; display: flex; align-items: center; gap: 0.65rem; font-size: 0.68rem; font-weight: 700; color: var(--sub); }
-    .vol-row span span { color: var(--text-b); }
-    .vol-row input { height: 4px; }
-    .silent-btn { background: var(--btn); border: 1px solid var(--border); color: var(--text); padding: 0.25rem 0.55rem; border-radius: 6px; cursor: pointer; font-size: 0.68rem; font-weight: 700; }
-    .silent-btn.active { background: #da3633; border-color: #f85149; color: #fff; }
-
-    .group-header { display: flex; justify-content: space-between; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); margin-bottom: 0.3rem; }
-    .grid { display: grid; gap: 0.3rem; }
-    .grid-2 { grid-template-columns: 1fr 1fr; }
-    .grid-3 { grid-template-columns: repeat(3, 1fr); }
-    .grid-4 { grid-template-columns: repeat(4, 1fr); }
-    .grid-6 { grid-template-columns: repeat(6, 1fr); }
-
-    .toggle-btn { background: var(--btn); border: 1px solid var(--border); color: var(--text); padding: 0.48rem 0.2rem; border-radius: 8px; cursor: pointer; font-size: 0.76rem; font-weight: 500; text-align: center; transition: all 0.15s; }
-    .toggle-btn.active { background: var(--accent-str); border-color: var(--accent); color: #fff; }
-    .toggle-btn .sub-label { font-size: 0.6rem; opacity: 0.75; display: block; }
-
-    .note-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; padding: 0.45rem 0.15rem; }
-    .note-icon { height: 18px; display: flex; align-items: center; justify-content: center; color: currentColor; }
-    .note-icon svg { fill: currentColor; }
-    .note-name { font-size: 0.68rem; font-weight: 600; }
-
-    .practice-btn.active { background: var(--mode-bg); border-color: var(--mode-brd); color: #fff; }
-
-    .collapsible { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-    .collapse-btn { width: 100%; background: transparent; border: none; padding: 0.65rem 0.8rem; display: flex; justify-content: space-between; color: var(--text); cursor: pointer; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
-    .collapse-content { display: none; padding: 0.2rem 0.75rem 0.75rem; flex-direction: column; gap: 0.75rem; border-top: 1px solid var(--border); }
-    .collapsible.open .collapse-content { display: flex; }
-    .collapsible.open .chevron { transform: rotate(180deg); }
-
-    .ladder-panel { display: flex; flex-direction: column; gap: 0.45rem; }
-    .ladder-panel input { width: 100%; background: var(--btn); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 0.25rem; font-size: 0.8rem; text-align: center; outline: none; }
-    .ladder-panel label { font-size: 0.65rem; text-transform: uppercase; color: var(--sub); }
-
-    .beat-indicators { display: flex; gap: 6px; justify-content: center; align-items: center; min-height: 64px; background: var(--bg); padding: 0.5rem; border-radius: 12px; border: 1px solid var(--border); }
-    .beat-col { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
-    .beat-dot { border-radius: 50%; transition: all 0.08s; }
-    .beat-dot.main { width: 13px; height: 13px; background: var(--dot); border: 2px solid var(--dot); }
-    .beat-dot.sub { width: 9px; height: 9px; border: 2px solid var(--dot); opacity: 0.7; }
-    .strum-arrow { font-size: 1.15rem; font-weight: 900; line-height: 1; user-select: none; }
-    .strum-down .strum-arrow { color: var(--down-dim); }
-    .strum-up .strum-arrow { color: var(--up-dim); }
-    .beat-col.active { transform: scale(1.15); }
-    .beat-col.active.strum-down .beat-dot { background: var(--down) !important; border-color: var(--down) !important; box-shadow: 0 0 12px var(--down); }
-    .beat-col.active.strum-down .strum-arrow { color: var(--down); filter: drop-shadow(0 0 8px var(--down)); }
-    .beat-col.active.strum-up .beat-dot { background: var(--up) !important; border-color: var(--up) !important; box-shadow: 0 0 12px var(--up); }
-    .beat-col.active.strum-up .strum-arrow { color: var(--up); filter: drop-shadow(0 0 8px var(--up)); }
-    .training-wheels-off .is-sub { opacity: 0.12; }
-    .training-wheels-off .is-sub .strum-arrow { visibility: hidden; }
-
-    .beat-indicators.compact { gap: 3.5px; }
-    .beat-indicators.compact .beat-dot.main { width: 11px; height: 11px; }
-    .beat-indicators.compact .beat-dot.sub { width: 8px; height: 8px; }
-    .beat-indicators.compact .strum-arrow { font-size: 0.95rem; }
-
-    .action-row {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 0.65rem;
-      margin-top: 0.2rem;
+      justify-content: center;
+      min-height: 64px;
+      margin: 0.15rem auto;
+      padding: 0 0.1rem;
     }
 
-    .primary-btn {
-      background: #238636;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #fff;
-      font-size: 1.05rem;
-      font-weight: 700;
-      padding: 0.82rem;
-      border-radius: 10px;
-      cursor: pointer;
+    .dots-row {
+      width: 100%;
       display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .beat-item {
+      flex: 1 1 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 0.4rem;
-      box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
-      transition: background 0.15s, transform 0.08s;
-    }
-    .primary-btn:active { transform: scale(0.98); }
-    .primary-btn.playing {
-      background: #da3633;
-      box-shadow: 0 4px 12px rgba(218, 54, 51, 0.35);
     }
 
-    .tap-btn {
-      background: var(--btn);
+    .beat-dot {
+      border-radius: 50%;
+      background: var(--beat-off);
+      border: 1.5px solid var(--beat-off-border);
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+      transition: all 0.08s ease;
+    }
+
+    .beat-item.beat-1.active .beat-dot {
+      background: #fff6a8 !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 0 22px #ffcf33, 0 0 35px var(--beat-1-glow), inset 0 1px 3px #ffffff !important;
+      transform: scale(1.35);
+    }
+
+    .beat-item.beat-main.active .beat-dot {
+      background: #e5a924 !important;
+      border-color: #ffe394 !important;
+      box-shadow: 0 0 18px var(--beat-main-glow), inset 0 1px 2px #ffffff !important;
+      transform: scale(1.22);
+    }
+
+    .beat-item.sub-item.active .beat-dot {
+      background: #ffffff !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 0 14px var(--beat-sub-glow) !important;
+      transform: scale(1.15);
+    }
+
+    .beat-item.beat-muted .beat-dot { opacity: 0.28; }
+    .beat-item.beat-muted.active .beat-dot {
+      background: #6c757d !important;
+      border-color: #adb5bd !important;
+      box-shadow: none !important;
+      transform: scale(1.05);
+    }
+
+    .strum-arrow {
+      font-weight: 900;
+      line-height: 1;
+      opacity: 0.6;
+      font-family: -apple-system, sans-serif;
+      transition: all 0.08s;
+      margin-top: 1px;
+    }
+    .beat-item.active .strum-arrow {
+      opacity: 1;
+      transform: scale(1.35);
+      filter: drop-shadow(0 0 10px currentColor);
+    }
+    .strum-down { color: var(--strum-down); }
+    .strum-up { color: var(--strum-up); }
+
+    /* ========================================================
+       3. TISZTA, ELEGÁNS BPM KONZOL (DOBOZ ÉS SZÖVEG NÉLKÜL)
+       ======================================================== */
+    .tempo-plate {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--btn-bg);
       border: 1px solid var(--border);
-      color: var(--text-b);
-      font-size: 0.95rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      border-radius: 10px;
+      border-radius: 24px;
+      padding: 0.8rem 1.4rem;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.15), 0 8px 20px rgba(0,0,0,0.12);
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .bpm-stepper-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .dial-step-btn {
+      background: var(--case-bg);
+      border: 1px solid var(--border);
+      color: var(--text-bright);
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      font-size: 1.6rem;
+      font-weight: 400;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: all 0.1s;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .dial-step-btn:active { transform: scale(0.9); background: var(--gold); color: #000; }
+
+    .bpm-number-input {
+      font-size: 4.4rem;
+      font-weight: 900;
+      color: var(--text-bright) !important;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      outline: none !important;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      text-align: center;
+      width: 155px;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      font-family: "Georgia", "Times New Roman", serif;
+      transition: color 0.15s, transform 0.1s;
+    }
+    .bpm-number-input:focus {
+      color: var(--gold) !important;
+      transform: scale(1.04);
+      cursor: text;
+    }
+    .bpm-number-input::-webkit-inner-spin-button,
+    .bpm-number-input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .bpm-number-input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    /* ========================================================
+       4. PONTOSAN CENTRÁLT, EREDETI ARANY/RUBIN GOMBOK
+       ======================================================== */
+    .main-controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 0 0.2rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin-bottom: 0.6rem;
+    }
+
+    .meter-pill-btn {
+      width: 94px;
+      height: 64px;
+      background: var(--btn-bg);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+      transition: transform 0.1s;
+    }
+    .meter-pill-btn:active { transform: scale(0.93); }
+    .meter-pill-label { font-size: 0.62rem; font-weight: 700; color: var(--text-dim); letter-spacing: 0.06em; }
+    
+    .meter-pill-val {
+      font-size: 0.98rem;
+      font-weight: 800;
+      color: var(--text-bright);
+      display: flex;
+      align-items: center;
       gap: 0.35rem;
-      user-select: none;
-      transition: background 0.12s, transform 0.08s, border-color 0.12s, box-shadow 0.12s;
+      margin-top: 2px;
     }
-    .tap-btn:active, .tap-btn.tapped {
-      background: var(--accent-str) !important;
-      border-color: var(--accent) !important;
-      color: #ffffff !important;
-      transform: scale(0.94);
-      box-shadow: 0 0 14px var(--accent);
+    .meter-sub-svg-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: currentColor;
+    }
+    .meter-sub-svg-wrap svg { fill: currentColor; }
+
+    .play-spring-btn {
+      width: 86px;
+      height: 86px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #d8ac34 0%, #aa7e18 100%);
+      border: 3px solid #fce899;
+      color: #1a1608;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 24px var(--gold-glow);
+      transition: transform 0.12s, box-shadow 0.15s, background 0.2s, border-color 0.2s;
+    }
+    .play-spring-btn:active { transform: scale(0.93); }
+    .play-spring-btn.playing {
+      background: linear-gradient(135deg, #c92a3b 0%, #9e1b29 100%);
+      border-color: #ff8591;
+      color: #ffffff;
+      box-shadow: 0 8px 24px rgba(201, 42, 59, 0.45);
+    }
+    .play-icon-box {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .guitar-header { display: flex; justify-content: space-between; align-items: center; }
-    .guitar-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: 0.4rem; }
-    .badge { font-size: 0.62rem; font-weight: 800; padding: 0.12rem 0.4rem; border-radius: 4px; }
-    .beta-badge { background: rgba(241,224,90,0.15); color: var(--gold); border: 1px solid var(--gold); }
-    .acc-badge { background: var(--btn); color: var(--sub); font-size: 0.76rem; padding: 0.2rem 0.6rem; border-radius: 6px; }
-    .acc-badge.perfect { background: rgba(46,160,67,0.25); color: var(--perf); border: 1px solid var(--perf); }
-    .acc-badge.early { background: rgba(241,224,90,0.25); color: var(--early); border: 1px solid var(--early); }
-    .acc-badge.late { background: rgba(255,123,114,0.25); color: var(--late); border: 1px solid var(--late); }
-    .level-meter { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); flex: 1; }
-    .level-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--up) 80%, var(--down)); transition: width 0.04s linear; }
-    .calib-box { background: var(--panel); padding: 0.55rem; border-radius: 8px; border: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .tap-spring-btn {
+      width: 94px;
+      height: 64px;
+      background: var(--btn-bg);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+      transition: transform 0.1s;
+    }
+    .tap-spring-btn:active, .tap-spring-btn.tapped {
+      transform: scale(0.93);
+      border-color: var(--gold);
+      background: var(--gold);
+      color: #000;
+    }
+    .tap-spring-label { font-size: 0.62rem; font-weight: 700; color: var(--text-dim); }
+    .tap-spring-val { font-size: 1.08rem; font-weight: 800; color: var(--text-bright); }
 
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(3px); z-index: 100; justify-content: center; align-items: center; padding: 1rem; }
-    .modal-overlay.open { display: flex; }
-    .modal-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 380px; padding: 1.2rem; display: flex; flex-direction: column; gap: 1rem; box-shadow: 0 16px 36px var(--shadow); }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
-    .modal-header h3 { font-size: 0.95rem; font-weight: 700; color: var(--text-b); text-transform: uppercase; letter-spacing: 0.06em; }
-    .close-btn { background: transparent; border: none; font-size: 1.25rem; color: var(--sub); cursor: pointer; }
+    /* ========================================================
+       5. JVA-MUSIC BEAT TESTRESZABÓ
+       ======================================================== */
+    .beat-pattern-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.65rem;
+      padding: 0.4rem 0.2rem;
+      width: 100%;
+    }
+    .beat-pat-btn {
+      width: 48px;
+      height: 54px;
+      border-radius: 50%;
+      background: var(--btn-bg);
+      border: 2px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .beat-pat-btn .pat-num {
+      font-size: 1.05rem;
+      font-weight: 900;
+      line-height: 1;
+      font-family: -apple-system, sans-serif;
+    }
+    .beat-pat-btn .pat-icon {
+      font-size: 0.65rem;
+      font-weight: 900;
+      line-height: 1;
+      margin-top: 3px;
+    }
+
+    .beat-pat-btn.state-A {
+      border-color: var(--gold);
+      background: rgba(212, 175, 55, 0.2);
+      color: var(--gold-light);
+      box-shadow: 0 0 12px var(--gold-glow);
+    }
+    .beat-pat-btn.state-N {
+      border-color: var(--border);
+      background: var(--btn-bg);
+      color: var(--text-dim);
+    }
+    .beat-pat-btn.state-M {
+      border-color: #484f58;
+      background: rgba(0,0,0,0.3);
+      color: #6e7681;
+      opacity: 0.55;
+    }
+
+    /* ========================================================
+       6. TÁGAS, 2 SOROS MODÁLIS ELRENDEZÉSEK
+       ======================================================== */
+    .modal-section { margin-bottom: 1.35rem; }
+    .modal-sec-title {
+      font-size: 0.74rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      margin-bottom: 0.6rem;
+    }
+
+    .grid-btns { display: grid; gap: 0.6rem; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+
+    .opt-btn {
+      background: var(--btn-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.75rem 0.3rem;
+      border-radius: 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .opt-btn.active {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #000;
+      box-shadow: 0 4px 12px var(--gold-glow);
+    }
+    .opt-btn .sub-text { font-size: 0.7rem; opacity: 0.75; display: block; margin-top: 3px; }
+
+    /* ========================================================
+       7. MARKÁNS ALSÓ MENÜSÁV (76PX)
+       ======================================================== */
+    .bottom-nav {
+      height: 76px;
+      background: var(--nav-bg);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border-top: 1.5px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding-bottom: 0.5rem;
+      position: relative;
+      z-index: 60;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      transition: background 0.25s, border-color 0.25s;
+    }
+    .nav-tab-btn {
+      background: transparent;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.35rem;
+      color: var(--text-dim);
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      flex: 1;
+      transition: color 0.15s, transform 0.1s;
+    }
+    .nav-tab-btn svg { width: 24px; height: 24px; fill: currentColor; }
+    .nav-tab-btn.active { color: var(--gold); }
+    .nav-tab-btn:active { transform: scale(0.92); }
+
+    .drawer-modal {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 76px;
+      background: var(--case-bg);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      transform: translateY(105%);
+      transition: transform 0.26s cubic-bezier(0.32, 0.72, 0, 1);
+      padding: 1.4rem;
+      overflow-y: auto;
+      border-bottom: 1px solid var(--border);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .drawer-modal.open { transform: translateY(0); }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.8rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.2rem;
+    }
+    .drawer-header h2 { font-size: 1.2rem; font-weight: 800; color: var(--text-bright); }
+    .drawer-close-btn {
+      background: var(--btn-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.15rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .drawer-modal input[type=number] {
+      background: var(--btn-bg);
+      border: 1px solid var(--border);
+      color: var(--text-bright);
+      padding: 0.45rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      text-align: center;
+      width: 100%;
+      outline: none;
+    }
+
+    /* Vintage Volume Slider */
+    .vintage-vol-slider {
+      width: 100%;
+      height: 8px;
+      appearance: none;
+      -webkit-appearance: none;
+      background: var(--border);
+      border-radius: 5px;
+      outline: none;
+      margin: 8px 0;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+    }
+    .vintage-vol-slider::-webkit-slider-thumb {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fceeab 0%, var(--gold) 60%, #7e5f15 100%);
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      cursor: grab;
+      transition: transform 0.1s;
+    }
+    .vintage-vol-slider::-webkit-slider-thumb:active {
+      cursor: grabbing;
+      transform: scale(1.15);
+    }
+    .vintage-vol-slider::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #fceeab 0%, var(--gold) 60%, #7e5f15 100%);
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      cursor: grab;
+    }
+
+    .acc-badge {
+      display: inline-block;
+      font-size: 0.85rem; font-weight: 800;
+      padding: 0.25rem 0.75rem; border-radius: 8px;
+      background: var(--btn-bg); color: var(--text-dim);
+    }
+    .acc-badge.perfect { background: rgba(46,160,67,0.25); color: #2ea043; border: 1px solid #2ea043; }
+    .acc-badge.early { background: rgba(241,224,90,0.25); color: #f1e05a; border: 1px solid #f1e05a; }
+    .acc-badge.late { background: rgba(255,123,114,0.25); color: #ff7b72; border: 1px solid #ff7b72; }
+
+    .level-meter { height: 9px; background: var(--btn-bg); border-radius: 5px; overflow: hidden; border: 1px solid var(--border); flex: 1; }
+    .level-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #d4af37, #00d2ee 80%, #ff4766); transition: width 0.04s linear; }
   </style>
 </head>
 <body>
 
-  <div class="app-container">
+  <div class="phone-container" id="phoneBody">
     <div id="errorBanner"></div>
+    <div class="pulse-veil" id="pulseVeil"></div>
 
-    <header class="app-header">
-      <div class="brand-title">Tempo<span>Coach</span></div>
-      <button class="gear-btn" id="gearBtn" title="Settings" aria-label="Settings">⚙️</button>
+    <header class="top-bar">
+      <div class="brand-group">
+        <div class="brand-title">Tempo<span>Coach</span></div>
+        <div class="version-tag">1.2</div>
+      </div>
+      <button class="top-mute-btn" id="quickMuteBtn" title="Mute Toggle">🔊</button>
     </header>
 
-    <main class="metronome-card" id="metronomeCard">
-      <div class="tempo-display">
-        <input type="number" id="bpmInput" class="bpm-input" min="1" max="240" value="120">
-        <div class="tempo-term" id="tempoTerm">MODERATO</div>
-        <div class="bpm-label">BPM (1 – 240) • Press Enter</div>
-      </div>
+    <main class="content-area">
+      <!-- 1. Mechanikus kamra, arany ív & húzható inga -->
+      <div class="metronome-chamber" id="metronomeChamber">
+        <svg class="chamber-scale" viewBox="0 0 280 130">
+          <path d="M 16,120 A 134,134 0 0,1 264,120" class="scale-arc-outer" />
+          <path d="M 28,120 A 122,122 0 0,1 252,120" class="scale-arc-inner" />
+        </svg>
 
-      <div class="flex-row">
-        <button class="step-btn" id="bpmMinus">−</button>
-        <div class="slider-wrapper">
-          <input type="range" id="bpmSlider" min="1" max="240" value="120">
-          <div class="slider-scale" id="bpmScale">
-            <div class="scale-mark" data-val="40" style="left: 16.32%;"><span class="scale-tick"></span><span class="scale-num">40</span></div>
-            <div class="scale-mark" data-val="60" style="left: 24.69%;"><span class="scale-tick"></span><span class="scale-num">60</span></div>
-            <div class="scale-mark" data-val="80" style="left: 33.05%;"><span class="scale-tick"></span><span class="scale-num">80</span></div>
-            <div class="scale-mark" data-val="100" style="left: 41.42%;"><span class="scale-tick"></span><span class="scale-num">100</span></div>
-            <div class="scale-mark" data-val="120" style="left: 49.79%;"><span class="scale-tick"></span><span class="scale-num">120</span></div>
-            <div class="scale-mark" data-val="140" style="left: 58.16%;"><span class="scale-tick"></span><span class="scale-num">140</span></div>
-            <div class="scale-mark" data-val="160" style="left: 66.53%;"><span class="scale-tick"></span><span class="scale-num">160</span></div>
-            <div class="scale-mark" data-val="180" style="left: 74.90%;"><span class="scale-tick"></span><span class="scale-num">180</span></div>
-            <div class="scale-mark" data-val="200" style="left: 83.26%;"><span class="scale-tick"></span><span class="scale-num">200</span></div>
-            <div class="scale-mark" data-val="220" style="left: 91.63%;"><span class="scale-tick"></span><span class="scale-num">220</span></div>
+        <!-- Gravírozott skálatábla (40 - 208) -->
+        <div class="chamber-engraved-plate">
+          <div class="plate-row"><span class="plate-bpm">40</span><span class="plate-term">GRAVE</span><span class="plate-bpm right">44</span></div>
+          <div class="plate-row"><span class="plate-bpm">48</span><span class="plate-term">LARGO</span><span class="plate-bpm right">52</span></div>
+          <div class="plate-row"><span class="plate-bpm">56</span><span class="plate-term">ADAGIO</span><span class="plate-bpm right">60</span></div>
+          <div class="plate-row"><span class="plate-bpm">66</span><span class="plate-term">ANDANTE</span><span class="plate-bpm right">72</span></div>
+          <div class="plate-row"><span class="plate-bpm">80</span><span class="plate-term">MODERATO</span><span class="plate-bpm right">88</span></div>
+          <div class="plate-row"><span class="plate-bpm">96</span><span class="plate-term">ALLEGRETTO</span><span class="plate-bpm right">108</span></div>
+          <div class="plate-row"><span class="plate-bpm">120</span><span class="plate-term">ALLEGRO</span><span class="plate-bpm right">132</span></div>
+          <div class="plate-row"><span class="plate-bpm">144</span><span class="plate-term">VIVACE</span><span class="plate-bpm right">160</span></div>
+          <div class="plate-row"><span class="plate-bpm">176</span><span class="plate-term">PRESTO</span><span class="plate-bpm right">192</span></div>
+          <div class="plate-row"><span class="plate-bpm">200</span><span class="plate-term">PRESTISSIMO</span><span class="plate-bpm right">208</span></div>
+        </div>
+
+        <!-- Inga forgócsapja & húzható súlya -->
+        <div class="pendulum-pivot" id="pendulumPivot">
+          <div class="pendulum-rod">
+            <div class="pendulum-weight" id="pendulumWeight" title="Drag up/down to adjust BPM">
+              <div class="weight-crease"></div>
+            </div>
           </div>
         </div>
-        <button class="step-btn" id="bpmPlus">+</button>
       </div>
 
-      <div class="vol-row">
-        <span>VOL <span id="volumeLabel">80%</span></span>
-        <input type="range" id="volumeSlider" min="0" max="100" value="80">
-        <button class="silent-btn" id="silentToggleBtn">🔇 MUTE</button>
+      <!-- 2. Ékkő ütem-szegecsek & hangsúlyos nyilak -->
+      <div class="beats-display-wrap">
+        <div class="dots-row" id="beatDotsRow"></div>
       </div>
 
-      <div>
-        <div class="group-header"><span>Time Signature</span></div>
-        <div class="grid grid-6" id="beatsContainer">
-          <button class="toggle-btn" data-beats="2">2/4</button>
-          <button class="toggle-btn" data-beats="3">3/4</button>
-          <button class="toggle-btn active" data-beats="4">4/4</button>
-          <button class="toggle-btn" data-beats="6">6/8</button>
-          <button class="toggle-btn" data-beats="7">7/8</button>
-          <button class="toggle-btn" data-beats="none">None</button>
+      <!-- 3. Tiszta, elegáns BPM konzol (szöveg nélkül, közvetlenül szerkeszthető) -->
+      <div class="tempo-plate">
+        <div class="bpm-stepper-row">
+          <button class="dial-step-btn" id="dialMinus">−</button>
+          <input type="number" id="bpmNumberInput" class="bpm-number-input" min="40" max="208" value="120" inputmode="numeric">
+          <button class="dial-step-btn" id="dialPlus">+</button>
         </div>
       </div>
 
-      <div>
-        <div class="group-header"><span>Subdivision</span></div>
-        <div class="grid grid-4" id="subdivContainer">
-          <button class="toggle-btn note-btn active" data-sub="1">
-            <span class="note-icon"><svg width="14" height="18" viewBox="0 0 20 28"><ellipse cx="7" cy="21" rx="5.5" ry="3.8" transform="rotate(-25 7 21)"/><rect x="11.5" y="3" width="2.2" height="19"/></svg></span>
-            <span class="note-name">Quarter</span>
-          </button>
-          <button class="toggle-btn note-btn" data-sub="2">
-            <span class="note-icon"><svg width="18" height="18" viewBox="0 0 26 28"><ellipse cx="5" cy="22" rx="4.5" ry="3.2" transform="rotate(-25 5 22)"/><ellipse cx="17" cy="18" rx="4.5" ry="3.2" transform="rotate(-25 17 18)"/><rect x="8.5" y="4" width="2" height="19"/><rect x="20.5" y="2" width="2" height="17"/><polygon points="8.5,4 22.5,2 22.5,5.5 8.5,7.5"/></svg></span>
-            <span class="note-name">Eighth</span>
-          </button>
-          <button class="toggle-btn note-btn" data-sub="3">
-            <span class="note-icon" style="flex-direction:column; gap:1px;">
-              <span style="font-size:0.6rem; font-weight:800; line-height:1;">3</span>
-              <svg width="20" height="13" viewBox="0 0 30 20"><ellipse cx="4" cy="15" rx="3.5" ry="2.5" transform="rotate(-20 4 15)"/><ellipse cx="14" cy="15" rx="3.5" ry="2.5" transform="rotate(-20 14 15)"/><ellipse cx="24" cy="15" rx="3.5" ry="2.5" transform="rotate(-20 24 15)"/><rect x="7" y="2" width="1.8" height="14"/><rect x="17" y="2" width="1.8" height="14"/><rect x="27" y="2" width="1.8" height="14"/><rect x="7" y="2" width="21.8" height="2.5"/></svg>
+      <!-- 4. Főgombok (T.S. + Kotta, Visszaállított Eredeti Arany/Rubin Play/Stop, Tap) -->
+      <div class="main-controls-row">
+        <button class="meter-pill-btn" id="btnOpenMeter">
+          <span class="meter-pill-label">METER / SUB</span>
+          <span class="meter-pill-val">
+            <span id="pillSigVal">4/4</span>
+            <span style="opacity:0.4; font-size:0.75rem;">•</span>
+            <span class="meter-sub-svg-wrap" id="pillSubIconWrap">
+              <svg width="13" height="17" viewBox="0 0 20 28" fill="currentColor"><ellipse cx="7" cy="21" rx="5.5" ry="3.8" transform="rotate(-25 7 21)"/><rect x="11.5" y="3" width="2.2" height="19"/></svg>
             </span>
-            <span class="note-name">Triplet</span>
-          </button>
-          <button class="toggle-btn note-btn" data-sub="4">
-            <span class="note-icon"><svg width="18" height="18" viewBox="0 0 26 28"><ellipse cx="5" cy="22" rx="4.5" ry="3.2" transform="rotate(-25 5 22)"/><ellipse cx="17" cy="18" rx="4.5" ry="3.2" transform="rotate(-25 17 18)"/><rect x="8.5" y="4" width="2" height="19"/><rect x="20.5" y="2" width="2" height="17"/><polygon points="8.5,3.5 22.5,1.5 22.5,4.8 8.5,6.8"/><polygon points="8.5,8 22.5,6 22.5,9.3 8.5,11.3"/></svg></span>
-            <span class="note-name">16th</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="collapsible" id="practiceCollapsible">
-        <button type="button" class="collapse-btn" id="collapseToggleBtn">
-          <span>🛠️ Practice & Training Tools</span><span class="chevron">▼</span>
+          </span>
         </button>
-        <div class="collapse-content">
-          <div>
-            <div class="group-header"><span>Strumming Direction</span></div>
-            <div class="grid grid-2" id="strumContainer">
-              <button class="toggle-btn active" data-strum="alternate">Alternate (<span style="color:var(--down)">↓</span> <span style="color:var(--up)">↑</span>)</button>
-              <button class="toggle-btn" data-strum="down">Down only (<span style="color:var(--down)">↓</span> <span style="color:var(--down)">↓</span>)</button>
-            </div>
-          </div>
-          <div>
-            <div class="group-header"><span>Modes</span><span id="trainerStatus" style="color:var(--mode-brd);"></span></div>
-            <div class="grid grid-3">
-              <button class="toggle-btn practice-btn" id="btnTrainingWheels">Training Wheels<span class="sub-label">30s solo</span></button>
-              <button class="toggle-btn practice-btn" id="btnGapClick">Gap Click<span class="sub-label">3:1 mute</span></button>
-              <button class="toggle-btn practice-btn" id="btnRandomDrop">Random Drop<span class="sub-label">Ghost</span></button>
-            </div>
-          </div>
-          <div class="ladder-panel">
-            <div class="group-header"><span>Auto BPM Ladder</span><span id="ladderStatusText" style="color:var(--gold);"></span></div>
-            <div class="grid grid-3">
-              <div><label>Start</label><input type="number" id="ladderStartBpm" value="80"></div>
-              <div><label>Target</label><input type="number" id="ladderTargetBpm" value="130"></div>
-              <div><label>Step</label><input type="number" id="ladderStep" value="5"></div>
-            </div>
-            <div class="flex-row" style="margin-top:0.2rem;">
-              <button class="toggle-btn" id="btnLadderToggle" style="flex:1;">Ladder: OFF</button>
-              <button class="toggle-btn" id="btnPyramidToggle" style="flex:1;">Pyramid: OFF</button>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <div>
-        <div class="group-header"><span>Session Timer</span><span id="timerCountdown" style="color:var(--gold); font-weight:700;">Infinite</span></div>
-        <div class="grid grid-4" id="timerContainer">
-          <button class="toggle-btn active" data-time="0">OFF</button>
-          <button class="toggle-btn" data-time="5">5 min</button>
-          <button class="toggle-btn" data-time="10">10 min</button>
-          <button class="toggle-btn" data-time="15">15 min</button>
-        </div>
-      </div>
+        <button class="play-spring-btn" id="mainPlayBtn" title="Start/Stop">
+          <div class="play-icon-box" id="playIconBox">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        </button>
 
-      <div class="beat-indicators" id="indicators"></div>
-
-      <div class="action-row">
-        <button class="primary-btn" id="playBtn">▶ Start</button>
-        <button class="tap-btn" id="tapBtn">🥁 TAP</button>
+        <button class="tap-spring-btn" id="mainTapBtn" title="Tap Tempo">
+          <span class="tap-spring-label">TEMPO</span>
+          <span class="tap-spring-val">TAP</span>
+        </button>
       </div>
     </main>
 
-    <section class="guitar-card">
-      <div class="guitar-header">
-        <div class="guitar-title">🎸 Guitar Timing Accuracy <span class="badge beta-badge">BETA</span></div>
-        <div class="acc-badge" id="accuracyBadge">Inactive</div>
-      </div>
-      <div class="flex-row">
-        <button class="toggle-btn" id="micToggleBtn" style="white-space:nowrap; padding:0.55rem 0.8rem;">🎙️ Detector: OFF</button>
-        <div class="level-meter"><div class="level-bar" id="micLevelBar"></div></div>
-        <span id="levelValue" style="font-size:0.65rem; color:var(--sub); width:28px;">0%</span>
-      </div>
-      <div class="calib-box">
-        <div>
-          <div class="group-header" style="margin:0 0 0.2rem;"><span>Offset</span><span id="offsetLabel" style="color:var(--accent);">−60 ms</span></div>
-          <input type="range" id="latencySlider" min="-150" max="100" value="-60" step="5">
-        </div>
-        <div>
-          <div class="group-header" style="margin:0 0 0.2rem;"><span>Sensitivity</span><span id="sensLabel" style="color:var(--accent);">Medium</span></div>
-          <input type="range" id="sensitivitySlider" min="1" max="100" value="55">
-        </div>
-      </div>
-      <div class="group-header" style="margin:0;">
-        <span>Accuracy: <b id="accuracyStats" style="color:var(--text-b);">--% (0 hits)</b></span>
-        <span>Offset: <b id="offsetFeedback" style="color:var(--text-b);">0 ms</b></span>
-      </div>
-    </section>
-  </div>
+    <!-- MINDIG LÁTHATÓ ALSÓ MENÜSÁV (76PX) -->
+    <nav class="bottom-nav">
+      <button class="nav-tab-btn active" data-target="none">
+        <svg viewBox="0 0 24 24"><path d="M12 2L4 20h16L12 2zm0 4.5l5.5 11.5h-11L12 6.5z"/></svg>
+        <span>Metronome</span>
+      </button>
+      <button class="nav-tab-btn" data-target="drawerPractice">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        <span>Practice</span>
+      </button>
+      <button class="nav-tab-btn" data-target="drawerGuitar">
+        <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+        <span>Guitar Beta</span>
+      </button>
+      <button class="nav-tab-btn" data-target="drawerSettings">
+        <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+        <span>Settings</span>
+      </button>
+    </nav>
 
-  <div class="modal-overlay" id="settingsModal">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>Settings</h3>
-        <button class="close-btn" id="closeSettingsBtn">&times;</button>
+    <!-- DRAWER: TÁGAS, 2 SOROS TIME SIGNATURE ÉS SUBDIVISION (SZEXTOLÁVAL) -->
+    <div class="drawer-modal" id="drawerMeter">
+      <div class="drawer-header">
+        <h2>Meter & Subdivision</h2>
+        <button class="drawer-close-btn" data-close>&times;</button>
       </div>
-      <div>
-        <div class="group-header"><span>Color Theme</span></div>
-        <div class="grid grid-3" id="themeButtons">
-          <button class="toggle-btn active" data-val="system">System</button>
-          <button class="toggle-btn" data-val="light">White</button>
-          <button class="toggle-btn" data-val="dark">Black</button>
+
+      <!-- JVA-Music Beat Pattern -->
+      <div class="modal-section">
+        <div class="modal-sec-title">Beat Pattern (Tap: Accent ▲, Normal ●, Mute ✕)</div>
+        <div class="beat-pattern-row" id="beatPatternRow"></div>
+      </div>
+
+      <!-- 2 soros Time Signature (3 + 3) -->
+      <div class="modal-section">
+        <div class="modal-sec-title">Time Signature</div>
+        <div class="grid-btns grid-3" id="tsGrid">
+          <button class="opt-btn" data-beats="2" data-unit="4">2/4</button>
+          <button class="opt-btn" data-beats="3" data-unit="4">3/4</button>
+          <button class="opt-btn active" data-beats="4" data-unit="4">4/4</button>
+          <button class="opt-btn" data-beats="6" data-unit="8">6/8</button>
+          <button class="opt-btn" data-beats="7" data-unit="8">7/8</button>
+          <button class="opt-btn" data-beats="none">None</button>
         </div>
       </div>
-      <div>
-        <div class="group-header"><span>Sound Preset</span></div>
-        <div class="grid grid-2" id="soundPresetContainer" style="gap:0.4rem;">
-          <button class="toggle-btn active" data-sound="digital">Digital Beep</button>
-          <button class="toggle-btn" data-sound="woodblock">Woodblock</button>
-          <button class="toggle-btn" data-sound="drumkit">Drum Kit</button>
-          <button class="toggle-btn" data-sound="mechanical">Mechanical</button>
-          <button class="toggle-btn" data-sound="cowbell" style="grid-column: span 2;">Cowbell & Clave</button>
+
+      <!-- 2 soros szimmetrikus Subdivision szextolával (3 + 3) -->
+      <div class="modal-section">
+        <div class="modal-sec-title">Subdivision</div>
+        <div class="grid-btns grid-3" id="subdivGrid">
+          <button class="opt-btn active" data-sub="1">Quarter<span class="sub-text">♩</span></button>
+          <button class="opt-btn" data-sub="2">8th<span class="sub-text">♫</span></button>
+          <button class="opt-btn" data-sub="3">Triplet<span class="sub-text">3-let</span></button>
+          <button class="opt-btn" data-sub="4">16th<span class="sub-text">♬</span></button>
+          <button class="opt-btn" data-sub="6">Sextuplet<span class="sub-text">6-let</span></button>
+          <button class="opt-btn" data-sub="8">32nd<span class="sub-text">32th</span></button>
         </div>
+      </div>
+    </div>
+
+    <!-- DRAWER: PRACTICE TOOLS -->
+    <div class="drawer-modal" id="drawerPractice">
+      <div class="drawer-header">
+        <h2>Practice & Training</h2>
+        <button class="drawer-close-btn" data-close>&times;</button>
+      </div>
+      <div class="modal-section">
+        <div class="modal-sec-title">Strumming Pattern</div>
+        <div class="grid-btns grid-2" id="strumGrid">
+          <button class="opt-btn active" data-strum="alternate">Alternate (<span style="color:var(--strum-down)">↓</span> <span style="color:var(--strum-up)">↑</span>)</button>
+          <button class="opt-btn" data-strum="down">Down only (<span style="color:var(--strum-down)">↓</span> <span style="color:var(--strum-down)">↓</span>)</button>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-sec-title">Practice Modes</div>
+        <div class="grid-btns grid-3">
+          <button class="opt-btn" id="btnTrainingWheels">Wheels<span class="sub-text">30s solo</span></button>
+          <button class="opt-btn" id="btnGapClick">Gap Click<span class="sub-text">3:1 mute</span></button>
+          <button class="opt-btn" id="btnRandomDrop">Random<span class="sub-text">Ghost</span></button>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-sec-title">Auto BPM Ladder & Pyramid (40–208) <span id="ladderIndicator" style="color:var(--gold); float:right;"></span></div>
+        <div class="grid-btns grid-3" style="margin-bottom:0.4rem;">
+          <div><input type="number" id="ladderStart" value="80" min="40" max="208" title="Start BPM"></div>
+          <div><input type="number" id="ladderTarget" value="132" min="40" max="208" title="Target BPM"></div>
+          <div><input type="number" id="ladderStep" value="4" title="Step"></div>
+        </div>
+        <div class="grid-btns grid-2">
+          <button class="opt-btn" id="btnLadderToggle">Ladder: OFF</button>
+          <button class="opt-btn" id="btnPyramidToggle">Pyramid: OFF</button>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-sec-title">Session Timer <span id="timerCountdown" style="color:var(--gold); float:right;">Infinite</span></div>
+        <div class="grid-btns grid-4" id="timerGrid">
+          <button class="opt-btn active" data-time="0">OFF</button>
+          <button class="opt-btn" data-time="5">5 min</button>
+          <button class="opt-btn" data-time="10">10 min</button>
+          <button class="opt-btn" data-time="15">15 min</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DRAWER: GUITAR ACCURACY DETECTOR -->
+    <div class="drawer-modal" id="drawerGuitar">
+      <div class="drawer-header">
+        <h2>Guitar Accuracy <span style="font-size:0.65rem; color:var(--gold); border:1px solid var(--gold); padding:2px 6px; border-radius:4px;">BETA</span></h2>
+        <button class="drawer-close-btn" data-close>&times;</button>
+      </div>
+      <div class="modal-section" style="text-align:center; padding:0.5rem 0;">
+        <div class="acc-badge" id="accuracyBadge">INACTIVE</div>
+      </div>
+      <div class="modal-section">
+        <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:0.8rem;">
+          <button class="opt-btn" id="micToggleBtn" style="flex:1; padding:0.7rem;">🎙️ Detector: OFF</button>
+          <div class="level-meter"><div class="level-bar" id="micLevelBar"></div></div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-sec-title">Latency Offset: <span id="offsetLabel" style="color:var(--gold);">−60 ms</span></div>
+        <input type="range" class="vintage-vol-slider" id="latencySlider" min="-150" max="100" value="-60" step="5">
+      </div>
+      <div class="modal-section">
+        <div class="modal-sec-title">Sensitivity: <span id="sensLabel" style="color:var(--gold);">Medium</span></div>
+        <input type="range" class="vintage-vol-slider" id="sensitivitySlider" min="1" max="100" value="55">
+      </div>
+      <div class="modal-section" style="display:flex; justify-content:space-between; font-size:0.8rem; font-weight:700;">
+        <span>Accuracy: <b id="accuracyStats" style="color:var(--text-bright);">--% (0 hits)</b></span>
+        <span>Offset: <b id="offsetFeedback" style="color:var(--text-bright);">0 ms</b></span>
+      </div>
+    </div>
+
+    <!-- DRAWER: SETTINGS -->
+    <div class="drawer-modal" id="drawerSettings">
+      <div class="drawer-header">
+        <h2>Settings</h2>
+        <button class="drawer-close-btn" data-close>&times;</button>
+      </div>
+      <div class="modal-section">
+        <div class="modal-sec-title">Sound Preset</div>
+        <div class="grid-btns grid-2" id="soundPresetGrid">
+          <button class="opt-btn" data-sound="digital">Digital Beep</button>
+          <button class="opt-btn" data-sound="woodblock">Woodblock</button>
+          <button class="opt-btn" data-sound="drumkit">Drum Kit</button>
+          <button class="opt-btn active" data-sound="mechanical">Mechanical Tick</button>
+          <button class="opt-btn" data-sound="cowbell" style="grid-column: span 2;">Cowbell & Clave</button>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-sec-title">Theme</div>
+        <div class="grid-btns grid-3" id="themeGrid">
+          <button class="opt-btn" data-theme-val="system">System</button>
+          <button class="opt-btn" data-theme-val="light">Ivory Gold</button>
+          <button class="opt-btn active" data-theme-val="dark">Obsidian</button>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-sec-title">Master Volume (<span id="volValText">80%</span>)</div>
+        <input type="range" class="vintage-vol-slider" id="masterVolumeSlider" min="0" max="100" value="80">
       </div>
     </div>
   </div>
@@ -468,41 +1063,61 @@
       if (b) { b.style.display = 'block'; b.textContent = `Error: ${m} (Line: ${l})`; }
     };
 
+    // Biztonsági ellenőrzéssel ellátott gombrács-kezelő
     function bindGroup(id, selector, onSelect) {
       const el = document.getElementById(id);
+      if (!el) return;
       el.addEventListener('click', e => {
         const btn = e.target.closest(selector);
         if (!btn) return;
         el.querySelectorAll(selector).forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         onSelect(btn);
+        saveState();
       });
     }
 
-    function getTempoTerm(bpm) {
-      if (bpm < 60) return "Largo";
-      if (bpm < 76) return "Adagio";
-      if (bpm < 108) return "Andante";
-      if (bpm < 120) return "Moderato";
-      if (bpm < 140) return "Allegretto";
-      if (bpm < 168) return "Allegro";
-      if (bpm < 200) return "Vivace";
-      return "Presto";
-    }
+    // Vektoros kották a Szextolával (Sextuplet, 6) kiegészítve
+    const SUBDIVISION_SVGS = {
+      1: `<svg width="13" height="17" viewBox="0 0 20 28"><ellipse cx="7" cy="21" rx="5.5" ry="3.8" transform="rotate(-25 7 21)"/><rect x="11.5" y="3" width="2.2" height="19"/></svg>`,
+      2: `<svg width="18" height="17" viewBox="0 0 26 28"><ellipse cx="5" cy="22" rx="4.5" ry="3.2" transform="rotate(-25 5 22)"/><ellipse cx="17" cy="18" rx="4.5" ry="3.2" transform="rotate(-25 17 18)"/><rect x="8.5" y="4" width="2" height="19"/><rect x="20.5" y="2" width="2" height="17"/><polygon points="8.5,4 22.5,2 22.5,5.5 8.5,7.5"/></svg>`,
+      3: `<svg width="24" height="19" viewBox="0 0 34 26"><text x="17" y="7" font-size="7.5" font-weight="900" text-anchor="middle" font-family="-apple-system, sans-serif">3</text><ellipse cx="4.5" cy="21" rx="3.5" ry="2.5" transform="rotate(-20 4.5 21)"/><ellipse cx="16" cy="21" rx="3.5" ry="2.5" transform="rotate(-20 16 21)"/><ellipse cx="27.5" cy="21" rx="3.5" ry="2.5" transform="rotate(-20 27.5 21)"/><rect x="7" y="9" width="1.8" height="13"/><rect x="18.5" y="9" width="1.8" height="13"/><rect x="30" y="9" width="1.8" height="13"/><rect x="7" y="9" width="24.8" height="2.4"/></svg>`,
+      4: `<svg width="18" height="17" viewBox="0 0 26 28"><ellipse cx="5" cy="22" rx="4.5" ry="3.2" transform="rotate(-25 5 22)"/><ellipse cx="17" cy="18" rx="4.5" ry="3.2" transform="rotate(-25 17 18)"/><rect x="8.5" y="4" width="2" height="19"/><rect x="20.5" y="2" width="2" height="17"/><polygon points="8.5,3.5 22.5,1.5 22.5,4.8 8.5,6.8"/><polygon points="8.5,8 22.5,6 22.5,9.3 8.5,11.3"/></svg>`,
+      6: `<svg width="24" height="19" viewBox="0 0 34 26"><text x="17" y="7" font-size="7.5" font-weight="900" text-anchor="middle" font-family="-apple-system, sans-serif">6</text><ellipse cx="4.5" cy="21" rx="3.2" ry="2.2" transform="rotate(-20 4.5 21)"/><ellipse cx="16" cy="21" rx="3.2" ry="2.2" transform="rotate(-20 16 21)"/><ellipse cx="27.5" cy="21" rx="3.2" ry="2.2" transform="rotate(-20 27.5 21)"/><rect x="7" y="9" width="1.8" height="13"/><rect x="18.5" y="9" width="1.8" height="13"/><rect x="30" y="9" width="1.8" height="13"/><rect x="7" y="9" width="24.8" height="2.4"/><rect x="7" y="12.5" width="24.8" height="2.4"/></svg>`,
+      8: `<svg width="18" height="17" viewBox="0 0 26 28"><ellipse cx="5" cy="22" rx="4.5" ry="3.2" transform="rotate(-25 5 22)"/><ellipse cx="17" cy="18" rx="4.5" ry="3.2" transform="rotate(-25 17 18)"/><rect x="8.5" y="3" width="2" height="20"/><rect x="20.5" y="1" width="2" height="18"/><polygon points="8.5,2.5 22.5,0.5 22.5,3.3 8.5,5.3"/><polygon points="8.5,6.5 22.5,4.5 22.5,7.3 8.5,9.3"/><polygon points="8.5,10.5 22.5,8.5 22.5,11.3 8.5,13.3"/></svg>`
+    };
 
     function setTheme(m) {
-      localStorage.setItem('pb_theme', m);
-      document.querySelectorAll('#themeButtons .toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.val === m));
+      document.querySelectorAll('#themeGrid .opt-btn').forEach(b => b.classList.toggle('active', b.dataset.themeVal === m));
       document.documentElement.setAttribute('data-theme', m === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : m);
     }
-    bindGroup('themeButtons', '.toggle-btn', b => setTheme(b.dataset.val));
-    matchMedia('(prefers-color-scheme: dark)').addListener(() => { if ((localStorage.getItem('pb_theme') || 'system') === 'system') setTheme('system'); });
-    setTheme(localStorage.getItem('pb_theme') || 'system');
+    bindGroup('themeGrid', '.opt-btn', b => {
+      setTheme(b.dataset.themeVal);
+      saveState();
+    });
 
-    const settingsModal = document.getElementById('settingsModal');
-    document.getElementById('gearBtn').onclick = () => settingsModal.classList.add('open');
-    document.getElementById('closeSettingsBtn').onclick = () => settingsModal.classList.remove('open');
-    settingsModal.onclick = e => { if (e.target === settingsModal) settingsModal.classList.remove('open'); };
+    const drawerModals = document.querySelectorAll('.drawer-modal');
+    function openDrawer(id) {
+      drawerModals.forEach(d => d.classList.remove('open'));
+      if (id && id !== 'none') {
+        const target = document.getElementById(id);
+        if (target) target.classList.add('open');
+      }
+    }
+    document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.nav-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        openDrawer(btn.dataset.target);
+      });
+    });
+    document.querySelectorAll('[data-close]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        drawerModals.forEach(d => d.classList.remove('open'));
+        document.querySelectorAll('.nav-tab-btn').forEach((b, idx) => b.classList.toggle('active', idx === 0));
+      });
+    });
+    document.getElementById('btnOpenMeter').onclick = () => openDrawer('drawerMeter');
 
     let wakeLock = null;
     async function toggleWake(on) {
@@ -510,18 +1125,21 @@
         try { if (on && !wakeLock) wakeLock = await navigator.wakeLock.request('screen'); else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; } } catch(e){}
       }
     }
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && metronome.isPlaying) toggleWake(true); });
 
+    // ========================================================
+    // METRONÓM MOTOR (WEB AUDIO & WORKER)
+    // ========================================================
     class MetronomeEngine {
       constructor() {
-        this.bpm = 120; this.beatsPerBar = 4; this.subdivision = 1; this.volume = 0.8;
+        this.bpm = 120; this.beatsPerBar = 4; this.unit = '4'; this.subdivision = 1; this.volume = 0.8;
+        this.beatPattern = ['A', 'N', 'N', 'N'];
         this.strumPattern = 'alternate'; this.isPlaying = false; this.isSilent = false;
         this.noEmphasis = false; this.trainingWheels = false; this.gapClick = false; this.randomDrop = false;
-        this.ladderEnabled = false; this.pyramidEnabled = false; this.ladderStart = 80; this.ladderTarget = 130;
-        this.ladderStep = 5; this.ladderDirection = 1; this.ladderBarCounter = 0;
+        this.ladderEnabled = false; this.pyramidEnabled = false; this.ladderStart = 80; this.ladderTarget = 132;
+        this.ladderStep = 4; this.ladderDirection = 1; this.ladderBarCounter = 0;
         this.timerMinutes = 0; this.timerRemainingMs = 0; this.lastTimerTick = 0;
-        this.nextNoteTime = 0; this.currentStep = 0; this.totalBarsElapsed = 0;
-        this.soundPreset = 'digital';
+        this.playbackStartTime = 0; this.nextNoteTime = 0; this.currentStep = 0; this.totalBarsElapsed = 0;
+        this.soundPreset = 'mechanical';
         this.notesInQueue = []; this.scheduledBeatsHistory = [];
         this.initWorker();
       }
@@ -553,18 +1171,18 @@
           this.buf1 = this.synth(0.08, t => (Math.sin(2 * Math.PI * (60 + 120 * Math.exp(-t * 40)) * t) * 0.7 + Math.sin(2 * Math.PI * 1400 * t) * 0.3) * Math.exp(-t * 35));
           this.buf2 = this.synth(0.045, t => (Math.sin(2 * Math.PI * 340 * t) * 0.5 + (Math.random() * 2 - 1) * 0.5) * Math.exp(-t * 90));
           this.buf3 = this.synth(0.025, t => ((Math.random() * 2 - 1) * 0.8) * Math.exp(-t * 160) * 0.4);
-        } else if (p === 'mechanical') {
-          this.buf1 = this.synth(0.05, t => (Math.sin(2 * Math.PI * 560 * t) * 0.7 + (Math.random() * 2 - 1) * 0.3) * Math.exp(-t * 85));
-          this.buf2 = this.synth(0.04, t => (Math.sin(2 * Math.PI * 440 * t) * 0.7 + (Math.random() * 2 - 1) * 0.3) * Math.exp(-t * 100) * 0.8);
-          this.buf3 = this.synth(0.03, t => (Math.sin(2 * Math.PI * 380 * t) * 0.6 + (Math.random() * 2 - 1) * 0.4) * Math.exp(-t * 120) * 0.45);
+        } else if (p === 'digital') {
+          this.buf1 = this.synth(0.045, t => Math.sin(t * (800 + 900 * Math.exp(-t * 90)) * 2 * Math.PI) * Math.exp(-t * 95));
+          this.buf2 = this.synth(0.035, t => Math.sin(t * (550 + 650 * Math.exp(-t * 90)) * 2 * Math.PI) * Math.exp(-t * 110) * 0.75);
+          this.buf3 = this.synth(0.025, t => Math.sin(t * (400 + 400 * Math.exp(-t * 90)) * 2 * Math.PI) * Math.exp(-t * 140) * 0.4);
         } else if (p === 'cowbell') {
           this.buf1 = this.synth(0.08, t => (Math.sin(2 * Math.PI * 587 * t) * 0.5 + Math.sin(2 * Math.PI * 845 * t) * 0.5) * Math.exp(-t * 45));
           this.buf2 = this.synth(0.035, t => Math.sin(2 * Math.PI * 2200 * t) * Math.exp(-t * 110) * 0.8);
           this.buf3 = this.synth(0.02, t => (Math.random() * 2 - 1) * Math.exp(-t * 140) * 0.35);
         } else {
-          this.buf1 = this.synth(0.045, t => Math.sin(t * (800 + 900 * Math.exp(-t * 90)) * 2 * Math.PI) * Math.exp(-t * 95));
-          this.buf2 = this.synth(0.035, t => Math.sin(t * (550 + 650 * Math.exp(-t * 90)) * 2 * Math.PI) * Math.exp(-t * 110) * 0.75);
-          this.buf3 = this.synth(0.025, t => Math.sin(t * (400 + 400 * Math.exp(-t * 90)) * 2 * Math.PI) * Math.exp(-t * 140) * 0.4);
+          this.buf1 = this.synth(0.045, t => (Math.sin(2 * Math.PI * 620 * t) * 0.7 + (Math.random() * 2 - 1) * 0.3) * Math.exp(-t * 85));
+          this.buf2 = this.synth(0.038, t => (Math.sin(2 * Math.PI * 480 * t) * 0.7 + (Math.random() * 2 - 1) * 0.3) * Math.exp(-t * 105) * 0.85);
+          this.buf3 = this.synth(0.025, t => (Math.sin(2 * Math.PI * 390 * t) * 0.6 + (Math.random() * 2 - 1) * 0.4) * Math.exp(-t * 135) * 0.5);
         }
         this.bufChime = this.synth(1.0, t => (Math.sin(2 * Math.PI * 1046.5 * t) + Math.sin(2 * Math.PI * 1318.5 * t)) * 0.35 * Math.exp(-t * 4));
       }
@@ -581,12 +1199,21 @@
       }
 
       setBpm(v) {
-        const cl = Math.max(1, Math.min(240, Math.round(v)));
+        const cl = Math.max(40, Math.min(208, Math.round(v)));
         if (this.isPlaying && this.audioCtx) {
           const rem = this.nextNoteTime - this.audioCtx.currentTime;
           if (rem > 0) this.nextNoteTime = this.audioCtx.currentTime + rem * (this.bpm / cl);
         }
         this.bpm = cl;
+      }
+
+      setBeats(beats, unit) {
+        this.beatsPerBar = beats;
+        this.unit = unit || '4';
+        this.beatPattern = Array(beats).fill('N');
+        if (this.beatPattern.length > 0 && !this.noEmphasis) {
+          this.beatPattern[0] = 'A';
+        }
       }
 
       checkTimer() {
@@ -603,19 +1230,29 @@
       }
 
       scheduleNote(step, time) {
-        const isBeat = (step % this.subdivision === 0), isFirst = !this.noEmphasis && (step === 0);
-        const wheelsOff = this.trainingWheels && (time - this.startTime >= 30.0);
-        const gapMuted = this.gapClick && (this.totalBarsElapsed % 4 === 3);
-        const drop = this.randomDrop && !isFirst && (Math.random() < 0.18);
-        const sound = !this.isSilent && !gapMuted && !(wheelsOff && !isBeat) && !drop;
+        const isBeat = (step % this.subdivision === 0);
+        const beatIndex = Math.floor(step / this.subdivision);
+        const beatType = this.beatPattern[beatIndex] || 'N';
 
-        this.notesInQueue.push({ step, time, muted: !sound && !this.isSilent, wheelsOff });
+        const isAccent = isBeat && (beatType === 'A') && !this.noEmphasis;
+        const isMutedBeat = isBeat && (beatType === 'M');
+
+        const wheelsOff = this.trainingWheels && (time - this.playbackStartTime >= 30.0);
+        const gapMuted = this.gapClick && (this.totalBarsElapsed % 4 === 3);
+        const drop = this.randomDrop && !isAccent && (Math.random() < 0.18);
+        
+        let sound = !this.isSilent && !gapMuted && !(wheelsOff && !isBeat) && !drop;
+        if (isMutedBeat) sound = false;
+
+        this.notesInQueue.push({ step, time, muted: !sound && !this.isSilent, isAccent, isMutedBeat, wheelsOff });
         this.scheduledBeatsHistory.push({ time, step, evaluated: false });
         if (this.scheduledBeatsHistory.length > 36) this.scheduledBeatsHistory.shift();
 
         if (sound) {
           const src = this.audioCtx.createBufferSource();
-          src.buffer = isFirst ? this.buf1 : (isBeat ? this.buf2 : this.buf3);
+          if (isAccent) src.buffer = this.buf1;
+          else if (isBeat) src.buffer = this.buf2;
+          else src.buffer = this.buf3;
           src.connect(this.gain); src.start(time);
         }
       }
@@ -642,7 +1279,8 @@
         this.initAudio(); this.isPlaying = true; this.currentStep = 0; this.totalBarsElapsed = 0; this.ladderBarCounter = 0; this.ladderDirection = 1;
         if (this.ladderEnabled) { this.setBpm(this.ladderStart); if (this.onLadder) this.onLadder(this.ladderStart, 1); }
         if (this.timerMinutes) { this.timerRemainingMs = this.timerMinutes * 60000; this.lastTimerTick = performance.now(); }
-        this.startTime = this.nextNoteTime = this.audioCtx.currentTime + 0.05;
+        this.playbackStartTime = this.audioCtx.currentTime + 0.05;
+        this.nextNoteTime = this.playbackStartTime;
         this.notesInQueue = []; this.scheduledBeatsHistory = [];
         this.worker.postMessage('start');
         toggleWake(true);
@@ -655,6 +1293,7 @@
       }
     }
 
+    // Gitár Érzékelő
     class GuitarDetector {
       constructor(ctx, eng) {
         this.ctx = ctx; this.eng = eng; this.active = false; this.state = 'ready';
@@ -718,70 +1357,329 @@
       }
     }
 
+    // ========================================================
+    // FELÜLET VEZÉRLÉS & LOCALSTORAGE MENTÉS
+    // ========================================================
+    const STORAGE_KEY = 'tempocoach_state_v12';
+
     const metronome = new MetronomeEngine();
     let detector = null;
 
-    const metronomeCard = document.getElementById('metronomeCard');
-    const bpmInput = document.getElementById('bpmInput'), bpmSlider = document.getElementById('bpmSlider');
-    const tempoTerm = document.getElementById('tempoTerm'), playBtn = document.getElementById('playBtn'), indContainer = document.getElementById('indicators');
-    const accBadge = document.getElementById('accuracyBadge'), micBar = document.getElementById('micLevelBar');
-    const ladderStart = document.getElementById('ladderStartBpm'), ladderTarget = document.getElementById('ladderTargetBpm'), ladderStep = document.getElementById('ladderStep');
+    const phoneBody = document.getElementById('phoneBody');
+    const pulseVeil = document.getElementById('pulseVeil');
+    const metronomeChamber = document.getElementById('metronomeChamber');
+    const bpmInput = document.getElementById('bpmNumberInput');
+    const pendulumPivot = document.getElementById('pendulumPivot');
+    const pendulumWeight = document.getElementById('pendulumWeight');
+    const mainPlayBtn = document.getElementById('mainPlayBtn');
+    const playIconBox = document.getElementById('playIconBox');
+    const mainTapBtn = document.getElementById('mainTapBtn');
+    const pillSigVal = document.getElementById('pillSigVal');
+    const pillSubIconWrap = document.getElementById('pillSubIconWrap');
+    const quickMuteBtn = document.getElementById('quickMuteBtn');
+    const dotsRow = document.getElementById('beatDotsRow');
+    const beatPatternRow = document.getElementById('beatPatternRow');
+
+    function saveState() {
+      try {
+        const state = {
+          bpm: metronome.bpm,
+          beatsPerBar: metronome.beatsPerBar,
+          unit: metronome.unit,
+          noEmphasis: metronome.noEmphasis,
+          subdivision: metronome.subdivision,
+          beatPattern: metronome.beatPattern,
+          strumPattern: metronome.strumPattern,
+          soundPreset: metronome.soundPreset,
+          volume: metronome.volume,
+          isSilent: metronome.isSilent,
+          theme: localStorage.getItem('tc_theme') || 'dark',
+          ladderStart: metronome.ladderStart,
+          ladderTarget: metronome.ladderTarget,
+          ladderStep: metronome.ladderStep,
+          ladderEnabled: metronome.ladderEnabled,
+          pyramidEnabled: metronome.pyramidEnabled,
+          trainingWheels: metronome.trainingWheels,
+          gapClick: metronome.gapClick,
+          randomDrop: metronome.randomDrop,
+          latencyOffset: parseInt(document.getElementById('latencySlider')?.value || -60),
+          sensitivity: parseInt(document.getElementById('sensitivitySlider')?.value || 55)
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {}
+    }
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (!saved) return;
+        const state = JSON.parse(saved);
+
+        if (state.bpm) metronome.setBpm(state.bpm);
+        if (state.beatsPerBar) metronome.beatsPerBar = state.beatsPerBar;
+        if (state.unit) metronome.unit = state.unit;
+        if (state.noEmphasis !== undefined) metronome.noEmphasis = state.noEmphasis;
+        if (state.subdivision) metronome.subdivision = state.subdivision;
+        if (Array.isArray(state.beatPattern)) metronome.beatPattern = state.beatPattern;
+        if (state.strumPattern) metronome.strumPattern = state.strumPattern;
+        if (state.soundPreset) metronome.soundPreset = state.soundPreset;
+        if (state.volume !== undefined) metronome.volume = state.volume;
+        if (state.isSilent !== undefined) metronome.isSilent = state.isSilent;
+        if (state.ladderStart) metronome.ladderStart = state.ladderStart;
+        if (state.ladderTarget) metronome.ladderTarget = state.ladderTarget;
+        if (state.ladderStep) metronome.ladderStep = state.ladderStep;
+        if (state.ladderEnabled !== undefined) metronome.ladderEnabled = state.ladderEnabled;
+        if (state.pyramidEnabled !== undefined) metronome.pyramidEnabled = state.pyramidEnabled;
+        if (state.trainingWheels !== undefined) metronome.trainingWheels = state.trainingWheels;
+        if (state.gapClick !== undefined) metronome.gapClick = state.gapClick;
+        if (state.randomDrop !== undefined) metronome.randomDrop = state.randomDrop;
+
+        // UI elemek szinkronizálása a mentett értékekkel
+        const sStart = document.getElementById('ladderStart');
+        const sTarget = document.getElementById('ladderTarget');
+        const sStep = document.getElementById('ladderStep');
+        if (sStart) sStart.value = metronome.ladderStart;
+        if (sTarget) sTarget.value = metronome.ladderTarget;
+        if (sStep) sStep.value = metronome.ladderStep;
+
+        const btnLadder = document.getElementById('btnLadderToggle');
+        if (btnLadder) {
+          btnLadder.classList.toggle('active', metronome.ladderEnabled);
+          btnLadder.textContent = metronome.ladderEnabled ? 'Ladder: ON' : 'Ladder: OFF';
+        }
+        const btnPyramid = document.getElementById('btnPyramidToggle');
+        if (btnPyramid) {
+          btnPyramid.classList.toggle('active', metronome.pyramidEnabled);
+          btnPyramid.textContent = metronome.pyramidEnabled ? 'Pyramid: ON' : 'Pyramid: OFF';
+        }
+
+        const btnTW = document.getElementById('btnTrainingWheels');
+        if (btnTW) btnTW.classList.toggle('active', metronome.trainingWheels);
+        const btnGC = document.getElementById('btnGapClick');
+        if (btnGC) btnGC.classList.toggle('active', metronome.gapClick);
+        const btnRD = document.getElementById('btnRandomDrop');
+        if (btnRD) btnRD.classList.toggle('active', metronome.randomDrop);
+
+        const latSlider = document.getElementById('latencySlider');
+        if (latSlider && state.latencyOffset !== undefined) {
+          latSlider.value = state.latencyOffset;
+          const lbl = document.getElementById('offsetLabel');
+          if (lbl) lbl.textContent = (state.latencyOffset > 0 ? '+' : '') + state.latencyOffset + ' ms';
+        }
+
+        const sensSlider = document.getElementById('sensitivitySlider');
+        if (sensSlider && state.sensitivity !== undefined) {
+          sensSlider.value = state.sensitivity;
+          const lbl = document.getElementById('sensLabel');
+          if (lbl) lbl.textContent = state.sensitivity < 35 ? 'Low' : (state.sensitivity > 70 ? 'High' : 'Medium');
+        }
+
+        const mVol = document.getElementById('masterVolumeSlider');
+        if (mVol && state.volume !== undefined) {
+          mVol.value = Math.round(state.volume * 100);
+          const txt = document.getElementById('volValText');
+          if (txt) txt.textContent = mVol.value + '%';
+        }
+
+        if (quickMuteBtn) {
+          quickMuteBtn.classList.toggle('muted', metronome.isSilent);
+          quickMuteBtn.textContent = metronome.isSilent ? '🔇' : '🔊';
+        }
+
+        // Aktív gombok kijelölése a drawerekben
+        document.querySelectorAll('#tsGrid .opt-btn').forEach(b => {
+          const match = metronome.noEmphasis ? (b.dataset.beats === 'none') : (parseInt(b.dataset.beats) === metronome.beatsPerBar && b.dataset.unit === metronome.unit);
+          b.classList.toggle('active', match);
+        });
+
+        document.querySelectorAll('#subdivGrid .opt-btn').forEach(b => {
+          b.classList.toggle('active', parseInt(b.dataset.sub) === metronome.subdivision);
+        });
+
+        document.querySelectorAll('#strumGrid .opt-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.strum === metronome.strumPattern);
+        });
+
+        document.querySelectorAll('#soundPresetGrid .opt-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.sound === metronome.soundPreset);
+        });
+
+      } catch (err) {}
+    }
+
+    function updatePillDisplay() {
+      if (metronome.noEmphasis) {
+        pillSigVal.textContent = 'None';
+      } else {
+        pillSigVal.textContent = `${metronome.beatsPerBar}/${metronome.unit || '4'}`;
+      }
+      pillSubIconWrap.innerHTML = SUBDIVISION_SVGS[metronome.subdivision] || SUBDIVISION_SVGS[1];
+    }
+
+    // Súly kalibráció 40 és 208 BPM-re (40 BPM a 40/GRAVE vonalon)
+    const WEIGHT_MIN_BOTTOM = 26;
+    const WEIGHT_MAX_BOTTOM = 200;
+    const WEIGHT_RANGE = WEIGHT_MAX_BOTTOM - WEIGHT_MIN_BOTTOM;
 
     function syncBpm(v) {
       metronome.setBpm(v);
-      bpmInput.value = bpmSlider.value = metronome.bpm;
-      tempoTerm.textContent = getTempoTerm(metronome.bpm);
+      if (bpmInput) bpmInput.value = metronome.bpm;
+
+      const posPct = (metronome.bpm - 40) / (208 - 40);
+      const bottomPx = WEIGHT_MAX_BOTTOM - (posPct * WEIGHT_RANGE);
+      if (pendulumWeight) pendulumWeight.style.bottom = `${bottomPx}px`;
+      saveState();
     }
-    bpmSlider.oninput = e => syncBpm(parseInt(e.target.value));
-    document.getElementById('bpmMinus').onclick = () => syncBpm(metronome.bpm - 1);
-    document.getElementById('bpmPlus').onclick = () => syncBpm(metronome.bpm + 1);
-    bpmInput.onkeydown = e => { if (e.key === 'Enter') { syncBpm(parseInt(bpmInput.value) || 120); bpmInput.blur(); } };
-    bpmInput.onblur = () => syncBpm(parseInt(bpmInput.value) || 120);
 
-    document.getElementById('bpmScale').addEventListener('click', e => {
-      const mark = e.target.closest('.scale-mark');
-      if (mark) syncBpm(parseInt(mark.dataset.val));
-    });
+    if (bpmInput) {
+      bpmInput.addEventListener('change', () => syncBpm(parseInt(bpmInput.value) || 120));
+      bpmInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          syncBpm(parseInt(bpmInput.value) || 120);
+          bpmInput.blur();
+        }
+      });
+    }
 
-    document.getElementById('volumeSlider').oninput = e => {
-      document.getElementById('volumeLabel').textContent = e.target.value + '%';
-      metronome.volume = e.target.value / 100;
-      if (metronome.gain) metronome.gain.gain.setValueAtTime(metronome.volume, metronome.audioCtx.currentTime);
-    };
-    document.getElementById('silentToggleBtn').onclick = function() {
-      metronome.isSilent = !metronome.isSilent;
-      this.classList.toggle('active', metronome.isSilent);
-      this.textContent = metronome.isSilent ? '🔊 MUTE: ON' : '🔇 MUTE';
-    };
+    // Ingasúly húzása kikapcsolt állapotban
+    let isDraggingWeight = false;
 
-    document.getElementById('collapseToggleBtn').onclick = () => document.getElementById('practiceCollapsible').classList.toggle('open');
+    function handleWeightMove(clientY) {
+      if (metronome.isPlaying || !metronomeChamber) return;
+      const rect = metronomeChamber.getBoundingClientRect();
+      const yFromBottom = rect.bottom - clientY;
+      const clampedBottom = Math.max(WEIGHT_MIN_BOTTOM, Math.min(WEIGHT_MAX_BOTTOM, yFromBottom));
+      const posPct = 1 - ((clampedBottom - WEIGHT_MIN_BOTTOM) / WEIGHT_RANGE);
+      const calculatedBpm = Math.round(40 + (posPct * (208 - 40)));
+      syncBpm(calculatedBpm);
+    }
 
-    bindGroup('beatsContainer', '.toggle-btn', b => {
+    if (pendulumWeight) {
+      pendulumWeight.addEventListener('mousedown', (e) => {
+        if (metronome.isPlaying) return;
+        isDraggingWeight = true;
+        e.preventDefault();
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (isDraggingWeight) handleWeightMove(e.clientY);
+      });
+      window.addEventListener('mouseup', () => { isDraggingWeight = false; });
+
+      pendulumWeight.addEventListener('touchstart', (e) => {
+        if (metronome.isPlaying) return;
+        isDraggingWeight = true;
+        e.stopPropagation();
+      }, { passive: false });
+
+      window.addEventListener('touchmove', (e) => {
+        if (isDraggingWeight && e.touches.length > 0) {
+          handleWeightMove(e.touches[0].clientY);
+        }
+      }, { passive: false });
+      window.addEventListener('touchend', () => { isDraggingWeight = false; });
+    }
+
+    const dialMinus = document.getElementById('dialMinus');
+    const dialPlus = document.getElementById('dialPlus');
+    if (dialMinus) dialMinus.onclick = () => syncBpm(metronome.bpm - 1);
+    if (dialPlus) dialPlus.onclick = () => syncBpm(metronome.bpm + 1);
+
+    if (quickMuteBtn) {
+      quickMuteBtn.onclick = () => {
+        metronome.isSilent = !metronome.isSilent;
+        quickMuteBtn.classList.toggle('muted', metronome.isSilent);
+        quickMuteBtn.textContent = metronome.isSilent ? '🔇' : '🔊';
+        saveState();
+      };
+    }
+
+    const masterVol = document.getElementById('masterVolumeSlider');
+    if (masterVol) {
+      masterVol.oninput = e => {
+        const v = e.target.value;
+        const txt = document.getElementById('volValText');
+        if (txt) txt.textContent = v + '%';
+        metronome.volume = v / 100;
+        if (metronome.gain) metronome.gain.gain.setValueAtTime(metronome.volume, metronome.audioCtx.currentTime);
+        saveState();
+      };
+    }
+
+    function renderBeatPatternRow() {
+      if (!beatPatternRow) return;
+      beatPatternRow.innerHTML = '';
+      const totalBeats = metronome.beatsPerBar;
+
+      for (let i = 0; i < totalBeats; i++) {
+        const state = metronome.beatPattern[i] || 'N';
+        const btn = document.createElement('div');
+        btn.className = `beat-pat-btn state-${state}`;
+
+        const iconSymbol = state === 'A' ? '▲' : (state === 'N' ? '●' : '✕');
+        btn.innerHTML = `
+          <span class="pat-num">${i + 1}</span>
+          <span class="pat-icon">${iconSymbol}</span>
+        `;
+
+        btn.onclick = () => {
+          const nextState = state === 'A' ? 'N' : (state === 'N' ? 'M' : 'A');
+          metronome.beatPattern[i] = nextState;
+          renderBeatPatternRow();
+          renderBeatDots();
+          saveState();
+        };
+
+        beatPatternRow.appendChild(btn);
+      }
+    }
+
+    bindGroup('tsGrid', '.opt-btn', b => {
       metronome.noEmphasis = (b.dataset.beats === 'none');
-      metronome.beatsPerBar = metronome.noEmphasis ? 4 : parseInt(b.dataset.beats);
-      metronome.currentStep = 0; renderInd();
-    });
-    bindGroup('subdivContainer', '.toggle-btn', b => {
-      metronome.subdivision = parseInt(b.dataset.sub);
-      metronome.currentStep = 0; renderInd();
-    });
-    bindGroup('strumContainer', '.toggle-btn', b => {
-      metronome.strumPattern = b.dataset.strum; renderInd();
-    });
-    bindGroup('timerContainer', '.toggle-btn', b => {
-      metronome.timerMinutes = parseInt(b.dataset.time);
-      document.getElementById('timerCountdown').textContent = metronome.timerMinutes ? `${metronome.timerMinutes}:00` : 'Infinite';
+      const beats = metronome.noEmphasis ? 4 : parseInt(b.dataset.beats);
+      const unit = b.dataset.unit || '4';
+      metronome.setBeats(beats, unit);
+      updatePillDisplay();
+      metronome.currentStep = 0;
+      renderBeatPatternRow();
+      renderBeatDots();
+      saveState();
     });
 
-    bindGroup('soundPresetContainer', '.toggle-btn', b => {
+    bindGroup('subdivGrid', '.opt-btn', b => {
+      metronome.subdivision = parseInt(b.dataset.sub);
+      updatePillDisplay();
+      metronome.currentStep = 0;
+      renderBeatDots();
+      saveState();
+    });
+
+    bindGroup('strumGrid', '.opt-btn', b => {
+      metronome.strumPattern = b.dataset.strum;
+      renderBeatDots();
+      saveState();
+    });
+
+    bindGroup('soundPresetGrid', '.opt-btn', b => {
       metronome.soundPreset = b.dataset.sound;
       metronome.buildBuffers();
+      saveState();
+    });
+
+    bindGroup('timerGrid', '.opt-btn', b => {
+      metronome.timerMinutes = parseInt(b.dataset.time);
+      const cd = document.getElementById('timerCountdown');
+      if (cd) cd.textContent = metronome.timerMinutes ? `${metronome.timerMinutes}:00` : 'Infinite';
+      saveState();
     });
 
     const setupToggle = (id, prop) => {
-      document.getElementById(id).onclick = function() {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.onclick = function() {
         metronome[prop] = !metronome[prop];
         this.classList.toggle('active', metronome[prop]);
+        saveState();
       };
     };
     setupToggle('btnTrainingWheels', 'trainingWheels');
@@ -789,151 +1687,259 @@
     setupToggle('btnRandomDrop', 'randomDrop');
 
     function syncLadder() {
-      metronome.ladderStart = parseInt(ladderStart.value) || 80;
-      metronome.ladderTarget = parseInt(ladderTarget.value) || 130;
-      metronome.ladderStep = parseInt(ladderStep.value) || 5;
+      const s = document.getElementById('ladderStart');
+      const t = document.getElementById('ladderTarget');
+      const st = document.getElementById('ladderStep');
+      metronome.ladderStart = Math.max(40, Math.min(208, parseInt(s ? s.value : 80) || 80));
+      metronome.ladderTarget = Math.max(40, Math.min(208, parseInt(t ? t.value : 132) || 132));
+      metronome.ladderStep = parseInt(st ? st.value : 4) || 4;
+      saveState();
     }
-    [ladderStart, ladderTarget, ladderStep].forEach(el => el.onchange = syncLadder);
-    document.getElementById('btnLadderToggle').onclick = function() {
-      metronome.ladderEnabled = !metronome.ladderEnabled;
-      this.classList.toggle('active', metronome.ladderEnabled);
-      this.textContent = metronome.ladderEnabled ? 'Ladder: ON' : 'Ladder: OFF';
-      syncLadder();
-    };
-    document.getElementById('btnPyramidToggle').onclick = function() {
-      metronome.pyramidEnabled = !metronome.pyramidEnabled;
-      this.classList.toggle('active', metronome.pyramidEnabled);
-      this.textContent = metronome.pyramidEnabled ? 'Pyramid: ON' : 'Pyramid: OFF';
-    };
+    ['ladderStart', 'ladderTarget', 'ladderStep'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.onchange = syncLadder;
+    });
+    
+    const btnLadder = document.getElementById('btnLadderToggle');
+    if (btnLadder) {
+      btnLadder.onclick = function() {
+        metronome.ladderEnabled = !metronome.ladderEnabled;
+        this.classList.toggle('active', metronome.ladderEnabled);
+        this.textContent = metronome.ladderEnabled ? 'Ladder: ON' : 'Ladder: OFF';
+        syncLadder();
+      };
+    }
+    const btnPyramid = document.getElementById('btnPyramidToggle');
+    if (btnPyramid) {
+      btnPyramid.onclick = function() {
+        metronome.pyramidEnabled = !metronome.pyramidEnabled;
+        this.classList.toggle('active', metronome.pyramidEnabled);
+        this.textContent = metronome.pyramidEnabled ? 'Pyramid: ON' : 'Pyramid: OFF';
+        saveState();
+      };
+    }
 
     metronome.onLadder = (nb, dir) => {
-      bpmInput.value = bpmSlider.value = nb;
-      tempoTerm.textContent = getTempoTerm(nb);
-      document.getElementById('ladderStatusText').textContent = `${dir > 0 ? '▲' : '▼'} (${nb})`;
+      syncBpm(nb);
+      const ind = document.getElementById('ladderIndicator');
+      if (ind) ind.textContent = `${dir > 0 ? '▲' : '▼'} (${nb})`;
     };
     metronome.onTimer = ms => {
       const s = Math.ceil(ms / 1000);
-      document.getElementById('timerCountdown').textContent = `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
+      const cd = document.getElementById('timerCountdown');
+      if (cd) cd.textContent = `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
     };
     metronome.onComplete = () => {
-      playBtn.textContent = '▶ Start'; playBtn.classList.remove('playing');
-      document.querySelectorAll('.beat-col').forEach(c => c.classList.remove('active'));
-      document.getElementById('timerCountdown').textContent = "Time's up!";
-      metronomeCard.classList.remove('pulse');
+      if (mainPlayBtn) mainPlayBtn.classList.remove('playing');
+      if (playIconBox) playIconBox.innerHTML = `<svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+      if (phoneBody) phoneBody.classList.remove('pulse');
+      if (pulseVeil) pulseVeil.classList.remove('active');
+      document.querySelectorAll('.beat-item').forEach(c => c.classList.remove('active'));
+      const cd = document.getElementById('timerCountdown');
+      if (cd) cd.textContent = "Time's up!";
     };
 
+    // Gitár Érzékelő vezérlés
     const micBtn = document.getElementById('micToggleBtn');
-    micBtn.onclick = async () => {
-      if (!detector) {
-        detector = new GuitarDetector(metronome.audioCtx, metronome);
-        detector.offsetMs = parseInt(document.getElementById('latencySlider').value);
-        detector.onLevel = l => {
-          const p = Math.round(l * 100);
-          micBar.style.width = p + '%';
-          document.getElementById('levelValue').textContent = p + '%';
-        };
-        detector.onRes = r => {
-          accBadge.className = 'acc-badge ' + r.cat;
-          accBadge.textContent = r.cat.toUpperCase();
-          document.getElementById('offsetFeedback').textContent = (r.diff > 0 ? '+' : '') + r.diff + ' ms';
-          document.getElementById('accuracyStats').textContent = `${r.score}% (${r.total} hits)`;
-        };
-      }
-      if (!detector.active) {
-        if (await detector.start()) { micBtn.classList.add('active'); micBtn.textContent = '🎙️ Detector: ON'; accBadge.textContent = 'Listening...'; }
+    const accBadge = document.getElementById('accuracyBadge');
+    const micBar = document.getElementById('micLevelBar');
+    if (micBtn) {
+      micBtn.onclick = async () => {
+        if (!detector) {
+          detector = new GuitarDetector(metronome.audioCtx, metronome);
+          const lat = document.getElementById('latencySlider');
+          detector.offsetMs = parseInt(lat ? lat.value : -60);
+          detector.onLevel = l => {
+            const p = Math.round(l * 100);
+            if (micBar) micBar.style.width = p + '%';
+          };
+          detector.onRes = r => {
+            if (accBadge) {
+              accBadge.className = 'acc-badge ' + r.cat;
+              accBadge.textContent = r.cat.toUpperCase();
+            }
+            const off = document.getElementById('offsetFeedback');
+            if (off) off.textContent = (r.diff > 0 ? '+' : '') + r.diff + ' ms';
+            const stats = document.getElementById('accuracyStats');
+            if (stats) stats.textContent = `${r.score}% (${r.total} hits)`;
+          };
+        }
+        if (!detector.active) {
+          if (await detector.start()) { micBtn.classList.add('active'); micBtn.textContent = '🎙️ Detector: ON'; if (accBadge) accBadge.textContent = 'LISTENING...'; }
+        } else {
+          detector.stop(); micBtn.classList.remove('active'); micBtn.textContent = '🎙️ Detector: OFF';
+          if (accBadge) { accBadge.className = 'acc-badge'; accBadge.textContent = 'INACTIVE'; }
+          if (micBar) micBar.style.width = '0%';
+        }
+      };
+    }
+
+    const latSlider = document.getElementById('latencySlider');
+    if (latSlider) {
+      latSlider.oninput = e => {
+        const v = parseInt(e.target.value);
+        const lbl = document.getElementById('offsetLabel');
+        if (lbl) lbl.textContent = (v > 0 ? '+' : '') + v + ' ms';
+        if (detector) detector.offsetMs = v;
+        saveState();
+      };
+    }
+    const sensSlider = document.getElementById('sensitivitySlider');
+    if (sensSlider) {
+      sensSlider.oninput = e => {
+        const v = parseInt(e.target.value);
+        const lbl = document.getElementById('sensLabel');
+        if (lbl) lbl.textContent = v < 35 ? 'Low' : (v > 70 ? 'High' : 'Medium');
+        if (detector) detector.threshold = 0.05 - (v / 100) * 0.045;
+        saveState();
+      };
+    }
+
+    // ========================================================
+    // ÉKKŐ PÖTTYÖK & TELJES SZÉLESSÉGET KITÖLTŐ NYILAK
+    // ========================================================
+    function renderBeatDots() {
+      if (!dotsRow) return;
+      dotsRow.innerHTML = '';
+      const totalSteps = metronome.beatsPerBar * metronome.subdivision;
+
+      let dotBaseSize, arrowRem;
+      if (totalSteps <= 4) {
+        dotBaseSize = 22; arrowRem = 2.1;
+      } else if (totalSteps <= 8) {
+        dotBaseSize = 18; arrowRem = 1.8;
+      } else if (totalSteps <= 12) {
+        dotBaseSize = 15; arrowRem = 1.5;
+      } else if (totalSteps <= 16) {
+        dotBaseSize = 13; arrowRem = 1.3;
+      } else if (totalSteps <= 24) {
+        dotBaseSize = 10; arrowRem = 1.05;
       } else {
-        detector.stop(); micBtn.classList.remove('active'); micBtn.textContent = '🎙️ Detector: OFF';
-        accBadge.className = 'acc-badge'; accBadge.textContent = 'Inactive';
-        micBar.style.width = '0%'; document.getElementById('levelValue').textContent = '0%';
+        dotBaseSize = 8; arrowRem = 0.85;
       }
-    };
 
-    document.getElementById('latencySlider').oninput = e => {
-      const v = parseInt(e.target.value);
-      document.getElementById('offsetLabel').textContent = (v > 0 ? '+' : '') + v + ' ms';
-      if (detector) detector.offsetMs = v;
-    };
-    document.getElementById('sensitivitySlider').oninput = e => {
-      const v = parseInt(e.target.value);
-      document.getElementById('sensLabel').textContent = v < 35 ? 'Low' : (v > 70 ? 'High' : 'Medium');
-      if (detector) detector.threshold = 0.05 - (v / 100) * 0.045;
-    };
+      for (let i = 0; i < totalSteps; i++) {
+        const item = document.createElement('div');
+        const isBeat = (i % metronome.subdivision === 0);
+        const beatIndex = Math.floor(i / metronome.subdivision);
+        const beatType = metronome.beatPattern[beatIndex] || 'N';
 
-    function renderInd() {
-      indContainer.innerHTML = '';
-      const total = metronome.beatsPerBar * metronome.subdivision;
-      indContainer.classList.toggle('compact', total > 8);
+        let typeClass = 'sub-item';
+        if (isBeat) {
+          if (beatType === 'A' && !metronome.noEmphasis) typeClass = 'beat-1';
+          else if (beatType === 'M') typeClass = 'beat-muted';
+          else typeClass = 'beat-main';
+        }
 
-      for (let i = 0; i < total; i++) {
-        const col = document.createElement('div'), isBeat = (i % metronome.subdivision === 0);
-        col.className = 'beat-col' + (isBeat ? '' : ' is-sub');
+        item.className = `beat-item ${typeClass}`;
+        item.id = `beat-item-${i}`;
+
         const dot = document.createElement('div');
-        dot.className = 'beat-dot ' + (isBeat ? 'main' : 'sub');
+        dot.className = 'beat-dot';
+        const curSize = isBeat ? dotBaseSize : Math.max(6, dotBaseSize * 0.72);
+        dot.style.width = `${curSize}px`;
+        dot.style.height = `${curSize}px`;
+
         const arrow = document.createElement('div');
         arrow.className = 'strum-arrow';
+        arrow.style.fontSize = `${arrowRem}rem`;
         const isDown = (metronome.strumPattern === 'down') || (i % 2 === 0);
-        col.classList.add(isDown ? 'strum-down' : 'strum-up');
+        arrow.classList.add(isDown ? 'strum-down' : 'strum-up');
         arrow.textContent = isDown ? '↓' : '↑';
-        col.append(dot, arrow);
-        indContainer.appendChild(col);
+
+        item.appendChild(dot);
+        item.appendChild(arrow);
+        dotsRow.appendChild(item);
       }
     }
 
-    playBtn.onclick = () => {
-      if (!metronome.isPlaying) {
-        syncLadder(); metronome.start(); playBtn.textContent = '■ Stop'; playBtn.classList.add('playing');
-        document.getElementById('trainerStatus').textContent = '';
-      } else {
-        metronome.stop(); playBtn.textContent = '▶ Start'; playBtn.classList.remove('playing');
-        document.querySelectorAll('.beat-col').forEach(c => c.classList.remove('active'));
-        indContainer.classList.remove('training-wheels-off');
-        document.getElementById('trainerStatus').textContent = '';
-        document.getElementById('ladderStatusText').textContent = '';
-        metronomeCard.classList.remove('pulse');
-      }
-    };
+    // Play és Stop gombok
+    if (mainPlayBtn) {
+      mainPlayBtn.onclick = () => {
+        if (!metronome.isPlaying) {
+          syncLadder(); metronome.start();
+          mainPlayBtn.classList.add('playing');
+          if (playIconBox) {
+            playIconBox.innerHTML = `<svg width="34" height="34" viewBox="0 0 24 24" fill="#ffffff"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/></svg>`;
+          }
+        } else {
+          metronome.stop();
+          mainPlayBtn.classList.remove('playing');
+          if (playIconBox) {
+            playIconBox.innerHTML = `<svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+          }
+          if (phoneBody) phoneBody.classList.remove('pulse');
+          if (pulseVeil) pulseVeil.classList.remove('active');
+          document.querySelectorAll('.beat-item').forEach(c => c.classList.remove('active'));
+        }
+      };
+    }
 
+    // Tap Tempo (40 - 208 BPM)
     let taps = [];
-    const tapBtn = document.getElementById('tapBtn');
-    tapBtn.onclick = () => {
-      tapBtn.classList.add('tapped');
-      setTimeout(() => tapBtn.classList.remove('tapped'), 100);
+    if (mainTapBtn) {
+      mainTapBtn.onclick = () => {
+        mainTapBtn.classList.add('tapped');
+        setTimeout(() => mainTapBtn.classList.remove('tapped'), 120);
 
-      const now = performance.now();
-      if (taps.length && now - taps[taps.length - 1] > 2000) taps = [];
-      taps.push(now);
-      if (taps.length > 4) taps.shift();
-      if (taps.length >= 2) {
-        const diffs = [];
-        for (let i = 1; i < taps.length; i++) diffs.push(taps[i] - taps[i-1]);
-        syncBpm(Math.round(60000 / (diffs.reduce((a, b) => a + b) / diffs.length)));
-      }
-    };
+        const now = performance.now();
+        if (taps.length && now - taps[taps.length - 1] > 2000) taps = [];
+        taps.push(now);
+        if (taps.length > 4) taps.shift();
+        if (taps.length >= 2) {
+          const diffs = [];
+          for (let i = 1; i < taps.length; i++) diffs.push(taps[i] - taps[i-1]);
+          const avg = diffs.reduce((a, b) => a + b) / diffs.length;
+          syncBpm(Math.round(60000 / avg));
+        }
+      };
+    }
 
+    // Lengő inga & vizuális ciklus
     function updateVisuals() {
       if (metronome.audioCtx) {
         const now = metronome.audioCtx.currentTime;
+
+        if (metronome.isPlaying) {
+          const spb = 60.0 / metronome.bpm;
+          const elapsed = now - metronome.playbackStartTime;
+          const angle = Math.sin((elapsed / spb) * Math.PI) * 23;
+          if (pendulumPivot) pendulumPivot.style.transform = `rotate(${angle}deg)`;
+        } else {
+          if (pendulumPivot) pendulumPivot.style.transform = `rotate(0deg)`;
+        }
+
         while (metronome.notesInQueue.length && metronome.notesInQueue[0].time <= now) {
           const n = metronome.notesInQueue.shift();
-          indContainer.classList.toggle('training-wheels-off', n.wheelsOff);
-          document.getElementById('trainerStatus').textContent = n.wheelsOff ? 'Solo Mode!' : '';
-          
-          if (n.step === 0 && !n.muted && !metronome.noEmphasis) {
-            metronomeCard.classList.remove('pulse');
-            void metronomeCard.offsetWidth;
-            metronomeCard.classList.add('pulse');
+
+          if (n.isAccent && !n.muted) {
+            if (phoneBody) {
+              phoneBody.classList.remove('pulse');
+              void phoneBody.offsetWidth;
+              phoneBody.classList.add('pulse');
+            }
+            if (pulseVeil) {
+              pulseVeil.classList.add('active');
+              setTimeout(() => pulseVeil.classList.remove('active'), 180);
+            }
           }
 
-          document.querySelectorAll('.beat-col').forEach((c, idx) => {
-            c.classList.toggle('active', idx === n.step && !n.muted);
+          document.querySelectorAll('.beat-item').forEach((item, idx) => {
+            item.classList.toggle('active', idx === n.step && !n.muted && !n.isMutedBeat);
           });
         }
       }
       requestAnimationFrame(updateVisuals);
     }
     requestAnimationFrame(updateVisuals);
-    renderInd();
-    syncBpm(120);
+
+    // Kezdeti állapot betöltése localStorage-ból vagy alapértékekkel
+    loadState();
+    renderBeatDots();
+    renderBeatPatternRow();
+    syncBpm(metronome.bpm);
+    updatePillDisplay();
+    setTheme(localStorage.getItem('tc_theme') || 'dark');
   </script>
 </body>
 </html>
