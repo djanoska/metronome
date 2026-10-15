@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>TempoCoach 1.2 - Mechanical Pro Metronome</title>
   <style>
     /* ========================================================
@@ -83,6 +83,7 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
+      min-height: 100dvh;
       padding: 0.5rem;
       user-select: none;
       transition: background 0.25s;
@@ -104,6 +105,49 @@
       transition: border-color 0.2s, box-shadow 0.2s;
     }
 
+    /* ========================================================
+       MOBIL NÉZET: KERET NÉLKÜLI TELJES KIJELZŐ
+       ======================================================== */
+    @media (max-width: 600px) {
+      body {
+        padding: 0;
+        align-items: stretch;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+      }
+
+      .phone-container {
+        max-width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        max-height: 100dvh;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+      }
+
+      .top-bar {
+        padding-top: max(0.8rem, env(safe-area-inset-top));
+        padding-left: 1.2rem;
+        padding-right: 1.2rem;
+      }
+
+      .content-area {
+        padding-bottom: 1.2rem !important;
+      }
+
+      .bottom-nav {
+        height: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+        padding-bottom: max(0.4rem, env(safe-area-inset-bottom, 0px)) !important;
+      }
+
+      .drawer-modal {
+        bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+      }
+    }
+
+    /* Fényfátyol réteg */
     .pulse-veil {
       position: absolute;
       inset: 0;
@@ -856,7 +900,7 @@
         <div class="dots-row" id="beatDotsRow"></div>
       </div>
 
-      <!-- 3. Tiszta, elegáns BPM konzol (szöveg nélkül, közvetlenül szerkeszthető) -->
+      <!-- 3. Tiszta, elegáns BPM konzol (doboz nélkül, közvetlenül szerkeszthető számmal) -->
       <div class="tempo-plate">
         <div class="bpm-stepper-row">
           <button class="dial-step-btn" id="dialMinus">−</button>
@@ -1063,7 +1107,6 @@
       if (b) { b.style.display = 'block'; b.textContent = `Error: ${m} (Line: ${l})`; }
     };
 
-    // Biztonsági ellenőrzéssel ellátott gombrács-kezelő
     function bindGroup(id, selector, onSelect) {
       const el = document.getElementById(id);
       if (!el) return;
@@ -1077,7 +1120,6 @@
       });
     }
 
-    // Vektoros kották a Szextolával (Sextuplet, 6) kiegészítve
     const SUBDIVISION_SVGS = {
       1: `<svg width="13" height="17" viewBox="0 0 20 28"><ellipse cx="7" cy="21" rx="5.5" ry="3.8" transform="rotate(-25 7 21)"/><rect x="11.5" y="3" width="2.2" height="19"/></svg>`,
       2: `<svg width="18" height="17" viewBox="0 0 26 28"><ellipse cx="5" cy="22" rx="4.5" ry="3.2" transform="rotate(-25 5 22)"/><ellipse cx="17" cy="18" rx="4.5" ry="3.2" transform="rotate(-25 17 18)"/><rect x="8.5" y="4" width="2" height="19"/><rect x="20.5" y="2" width="2" height="17"/><polygon points="8.5,4 22.5,2 22.5,5.5 8.5,7.5"/></svg>`,
@@ -1088,6 +1130,7 @@
     };
 
     function setTheme(m) {
+      localStorage.setItem('tc_theme', m);
       document.querySelectorAll('#themeGrid .opt-btn').forEach(b => b.classList.toggle('active', b.dataset.themeVal === m));
       document.documentElement.setAttribute('data-theme', m === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : m);
     }
@@ -1117,7 +1160,8 @@
         document.querySelectorAll('.nav-tab-btn').forEach((b, idx) => b.classList.toggle('active', idx === 0));
       });
     });
-    document.getElementById('btnOpenMeter').onclick = () => openDrawer('drawerMeter');
+    const btnOpenMeter = document.getElementById('btnOpenMeter');
+    if (btnOpenMeter) btnOpenMeter.onclick = () => openDrawer('drawerMeter');
 
     let wakeLock = null;
     async function toggleWake(on) {
@@ -1358,7 +1402,7 @@
     }
 
     // ========================================================
-    // FELÜLET VEZÉRLÉS & LOCALSTORAGE MENTÉS
+    // FELÜLET VEZÉRLÉS
     // ========================================================
     const STORAGE_KEY = 'tempocoach_state_v12';
 
@@ -1434,7 +1478,6 @@
         if (state.gapClick !== undefined) metronome.gapClick = state.gapClick;
         if (state.randomDrop !== undefined) metronome.randomDrop = state.randomDrop;
 
-        // UI elemek szinkronizálása a mentett értékekkel
         const sStart = document.getElementById('ladderStart');
         const sTarget = document.getElementById('ladderTarget');
         const sStep = document.getElementById('ladderStep');
@@ -1486,7 +1529,6 @@
           quickMuteBtn.textContent = metronome.isSilent ? '🔇' : '🔊';
         }
 
-        // Aktív gombok kijelölése a drawerekben
         document.querySelectorAll('#tsGrid .opt-btn').forEach(b => {
           const match = metronome.noEmphasis ? (b.dataset.beats === 'none') : (parseInt(b.dataset.beats) === metronome.beatsPerBar && b.dataset.unit === metronome.unit);
           b.classList.toggle('active', match);
@@ -1516,7 +1558,6 @@
       pillSubIconWrap.innerHTML = SUBDIVISION_SVGS[metronome.subdivision] || SUBDIVISION_SVGS[1];
     }
 
-    // Súly kalibráció 40 és 208 BPM-re (40 BPM a 40/GRAVE vonalon)
     const WEIGHT_MIN_BOTTOM = 26;
     const WEIGHT_MAX_BOTTOM = 200;
     const WEIGHT_RANGE = WEIGHT_MAX_BOTTOM - WEIGHT_MIN_BOTTOM;
@@ -1541,7 +1582,6 @@
       });
     }
 
-    // Ingasúly húzása kikapcsolt állapotban
     let isDraggingWeight = false;
 
     function handleWeightMove(clientY) {
@@ -1836,7 +1876,7 @@
 
         const dot = document.createElement('div');
         dot.className = 'beat-dot';
-        const curSize = isBeat ? dotBaseSize : Math.max(6, dotBaseSize * 0.72);
+        const curSize = isBeat ? dotBaseSize : Math.max(7, dotBaseSize * 0.72);
         dot.style.width = `${curSize}px`;
         dot.style.height = `${curSize}px`;
 
