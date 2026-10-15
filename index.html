@@ -3,644 +3,260 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PolyBeat - Web Audio Metronome</title>
+  <title>TempoCoach - Web Audio Metronome</title>
   <style>
-    /* ========================================================
-       CSS VARIABLES & THEMES (BLACK / WHITE / SYSTEM)
-       ======================================================== */
     :root {
-      --bg: #0d1117;
-      --card-bg: #161b22;
-      --panel-bg: #11151c;
-      --border: #30363d;
-      --accent: #58a6ff;
-      --accent-strong: #1f6feb;
-      --text: #c9d1d9;
-      --text-bright: #ffffff;
-      --sub-text: #8b949e;
-      --btn-bg: #21262d;
-      --btn-hover: #30363d;
-      --card-shadow: rgba(0, 0, 0, 0.5);
-
-      --beat-dot-color: #ffffff;
-
-      --strum-down: #ff3b56;
-      --strum-down-dim: rgba(255, 59, 86, 0.4);
-      --strum-up: #00d2ee;
-      --strum-up-dim: rgba(0, 210, 238, 0.4);
-
-      --mode-active-bg: #3b2361;
-      --mode-active-border: #d2a8ff;
-      --mode-active-text: #f0f6fc;
-      --gold: #f1e05a;
-      --accuracy-perfect: #2ea043;
-      --accuracy-early: #f1e05a;
-      --accuracy-late: #ff7b72;
+      --bg: #0d1117; --card: #161b22; --panel: #11151c; --border: #30363d;
+      --accent: #58a6ff; --accent-str: #1f6feb; --text: #c9d1d9; --text-b: #ffffff;
+      --sub: #8b949e; --btn: #21262d; --btn-h: #30363d; --shadow: rgba(0,0,0,0.5);
+      --dot: #ffffff; --down: #ff3b56; --down-dim: rgba(255,59,86,0.4);
+      --up: #00d2ee; --up-dim: rgba(0,210,238,0.4);
+      --mode-bg: #3b2361; --mode-brd: #d2a8ff; --gold: #f1e05a;
+      --perf: #2ea043; --early: #f1e05a; --late: #ff7b72;
     }
-
     [data-theme="light"] {
-      --bg: #f4f6f8;
-      --card-bg: #ffffff;
-      --panel-bg: #f6f8fa;
-      --border: #d0d7de;
-      --accent: #0969da;
-      --accent-strong: #0969da;
-      --text: #24292f;
-      --text-bright: #0969da;
-      --sub-text: #57606a;
-      --btn-bg: #f3f4f6;
-      --btn-hover: #e5e7eb;
-      --card-shadow: rgba(0, 0, 0, 0.08);
-
-      --beat-dot-color: #24292f;
-
-      --strum-down: #cf222e;
-      --strum-down-dim: rgba(207, 34, 46, 0.35);
-      --strum-up: #0969da;
-      --strum-up-dim: rgba(9, 105, 218, 0.35);
-
-      --mode-active-bg: #f2eaff;
-      --mode-active-border: #8250df;
-      --mode-active-text: #8250df;
-      --gold: #9a6700;
-      --accuracy-perfect: #1a7f37;
-      --accuracy-early: #9a6700;
-      --accuracy-late: #cf222e;
+      --bg: #f4f6f8; --card: #ffffff; --panel: #f6f8fa; --border: #d0d7de;
+      --accent: #0969da; --accent-str: #0969da; --text: #24292f; --text-b: #0969da;
+      --sub: #57606a; --btn: #f3f4f6; --btn-h: #e5e7eb; --shadow: rgba(0,0,0,0.08);
+      --dot: #24292f; --down: #cf222e; --down-dim: rgba(207,34,46,0.35);
+      --up: #0969da; --up-dim: rgba(9,105,218,0.35);
+      --mode-bg: #f2eaff; --mode-brd: #8250df; --gold: #9a6700;
+      --perf: #1a7f37; --early: #9a6700; --late: #cf222e;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 1rem 0.6rem; transition: background 0.2s; }
+    .app-container { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 0.85rem; }
 
-    body {
-      background-color: var(--bg);
-      color: var(--text);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      padding: 1rem 0.6rem;
-      transition: background-color 0.2s, color 0.2s;
-    }
+    #errorBanner { display: none; background: #da3633; color: #fff; padding: 0.6rem; border-radius: 8px; font-size: 0.75rem; }
+    .app-header, .metronome-card, .guitar-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 8px 24px var(--shadow); }
+    
+    .app-header { border-radius: 12px; padding: 0.55rem 0.9rem; display: flex; justify-content: space-between; align-items: center; }
+    .brand-title { font-size: 1rem; font-weight: 800; letter-spacing: 0.05em; color: var(--text-b); }
+    .brand-title span { color: var(--accent); }
+    .gear-btn { background: transparent; border: none; font-size: 1.15rem; cursor: pointer; color: var(--sub); padding: 0.2rem; line-height: 1; transition: transform 0.2s, color 0.2s; }
+    .gear-btn:hover { color: var(--text-b); transform: rotate(30deg); }
 
-    .app-container {
-      width: 100%;
-      max-width: 440px;
-      display: flex;
-      flex-direction: column;
-      gap: 0.9rem;
-    }
-
-    .theme-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 0.45rem 0.75rem;
-      box-shadow: 0 4px 12px var(--card-shadow);
-    }
-
-    .theme-label {
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--sub-text);
-    }
-
-    .theme-buttons {
-      display: flex;
-      gap: 0.3rem;
-    }
-
-    .theme-btn {
-      background: var(--btn-bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 0.25rem 0.55rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.72rem;
-      font-weight: 600;
-      transition: all 0.15s;
-    }
-
-    .theme-btn.active {
-      background: var(--accent-strong);
-      border-color: var(--accent);
-      color: #ffffff;
-    }
-
-    #errorBanner {
-      display: none;
-      background: #da3633;
-      color: #fff;
-      padding: 0.65rem 0.85rem;
-      border-radius: 8px;
-      font-size: 0.78rem;
-      word-break: break-all;
-    }
-
-    .metronome-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 1.25rem 1rem;
-      box-shadow: 0 16px 36px var(--card-shadow);
-      display: flex;
-      flex-direction: column;
-      gap: 0.95rem;
-      transition: background-color 0.2s, border-color 0.2s;
-    }
+    .metronome-card { padding: 1.2rem 1rem; display: flex; flex-direction: column; gap: 0.85rem; }
+    .guitar-card { padding: 1.1rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
 
     .tempo-display { text-align: center; }
-
-    .bpm-input-wrapper {
-      display: inline-flex;
-      align-items: baseline;
-      justify-content: center;
-    }
-
-    .bpm-input {
-      font-size: 3.8rem;
-      font-weight: 800;
-      color: var(--text-bright);
-      background: transparent;
-      border: 1px dashed transparent;
-      border-radius: 8px;
-      text-align: center;
-      width: 155px;
-      padding: 0;
-      outline: none;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-      cursor: pointer;
-    }
-
-    .bpm-input::-webkit-outer-spin-button,
+    .bpm-input { font-size: 3.8rem; font-weight: 800; color: var(--text-b); background: transparent; border: 1px dashed transparent; text-align: center; width: 155px; outline: none; line-height: 1; cursor: pointer; }
     .bpm-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    .bpm-input[type=number] { -moz-appearance: textfield; }
+    .tempo-term { font-size: 0.82rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); margin-top: -0.2rem; }
+    .bpm-label { font-size: 0.68rem; text-transform: uppercase; color: var(--sub); letter-spacing: 0.08em; margin-top: 0.15rem; }
 
-    .bpm-label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--sub-text);
-      margin-top: 0.2rem;
-    }
+    .flex-row { display: flex; align-items: center; gap: 0.65rem; }
 
-    .slider-row {
+    /* ========================================================
+       PONTOS, MATEMATIKAILAG SZINKRONIZÁLT CSÚSZKA ÉS SKÁLA
+       ======================================================== */
+    .slider-wrapper {
+      flex: 1;
       display: flex;
-      align-items: center;
-      gap: 0.65rem;
+      flex-direction: column;
+      position: relative;
     }
 
     input[type=range] {
-      flex: 1;
-      accent-color: var(--accent);
-      cursor: pointer;
-    }
-
-    .step-btn {
-      background: var(--btn-bg);
-      border: 1px solid var(--border);
-      color: var(--text-bright);
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 1.1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Helytakarékos Hangerő sor */
-    .vol-compact-row {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-      background: var(--panel-bg);
-      border: 1px solid var(--border);
-      border-radius: 9px;
-      padding: 0.35rem 0.65rem;
-    }
-
-    .vol-label {
-      font-size: 0.68rem;
-      font-weight: 700;
-      color: var(--sub-text);
-      letter-spacing: 0.05em;
-      white-space: nowrap;
-    }
-
-    .vol-label span {
-      color: var(--text-bright);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .vol-compact-row input[type=range] {
-      flex: 1;
-      height: 4px;
-    }
-
-    .silent-btn {
-      background: var(--btn-bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 0.25rem 0.55rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.68rem;
-      font-weight: 700;
-      white-space: nowrap;
-      transition: all 0.15s;
-    }
-    .silent-btn.active {
-      background: #da3633;
-      border-color: #f85149;
-      color: #fff;
-    }
-
-    .control-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.35rem;
-    }
-
-    .group-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.72rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--sub-text);
-    }
-
-    .button-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.35rem; }
-    .button-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; }
-    .button-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; }
-
-    .time-sig-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 0.3rem;
-    }
-
-    .time-sig-btn {
-      padding: 0.5rem 0.1rem;
-      font-size: 0.72rem;
-      white-space: nowrap;
-    }
-
-    .toggle-btn {
-      background: var(--btn-bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-      padding: 0.5rem 0.2rem;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 0.78rem;
-      font-weight: 500;
-      text-align: center;
-      transition: all 0.15s;
-    }
-
-    .toggle-btn.active {
-      background: var(--accent-strong);
-      border-color: var(--accent);
-      color: #ffffff;
-    }
-
-    .collapsible-card {
-      background: var(--panel-bg);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-      transition: all 0.2s ease;
-    }
-
-    .collapse-header-btn {
       width: 100%;
-      background: transparent;
-      border: none;
-      padding: 0.65rem 0.85rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: var(--text);
-      cursor: pointer;
-      font-size: 0.76rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
-    .collapse-chevron {
-      transition: transform 0.2s ease;
-      font-size: 0.75rem;
-      color: var(--accent);
-    }
-
-    .collapsible-card.open .collapse-chevron {
-      transform: rotate(180deg);
-    }
-
-    .collapse-content {
-      display: none;
-      padding: 0.25rem 0.75rem 0.75rem;
-      flex-direction: column;
-      gap: 0.75rem;
-      border-top: 1px solid var(--border);
-    }
-
-    .collapsible-card.open .collapse-content {
-      display: flex;
-    }
-
-    .practice-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.12rem;
-      padding: 0.5rem 0.2rem;
-    }
-    .practice-btn .sub-label { font-size: 0.62rem; opacity: 0.75; }
-    .practice-btn.active {
-      background: var(--mode-active-bg);
-      border-color: var(--mode-active-border);
-      color: var(--mode-active-text);
-    }
-
-    .ladder-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .ladder-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 0.4rem;
-      width: 100%;
-    }
-
-    .ladder-field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.15rem;
-      min-width: 0;
-    }
-
-    .ladder-field label {
-      font-size: 0.65rem;
-      text-transform: uppercase;
-      color: var(--sub-text);
-    }
-
-    .ladder-field input {
-      width: 100%;
-      box-sizing: border-box;
-      background: var(--btn-bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text);
-      padding: 0.3rem 0.15rem;
-      font-size: 0.8rem;
-      text-align: center;
+      height: 7px;
+      appearance: none;
+      -webkit-appearance: none;
+      background: var(--border);
+      border-radius: 4px;
       outline: none;
+      cursor: pointer;
+      margin: 4px 0 2px 0;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+      cursor: grab;
+      transition: transform 0.1s;
+    }
+    input[type=range]::-webkit-slider-thumb:active {
+      transform: scale(1.15);
+      cursor: grabbing;
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+      cursor: grab;
     }
 
-    /* ========================================================
-       KIEGYENSÚLYOZOTT, JÓL LÁTHATÓ RITMUSJELZŐ SÁV
-       ======================================================== */
-    .beat-indicators {
-      display: flex;
-      gap: 6px;
-      justify-content: center;
-      align-items: center;
-      min-height: 68px;
-      background: var(--bg);
-      padding: 0.65rem 0.5rem;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      overflow: hidden;
-      width: 100%;
+    /* A skála szélessége pontosan megegyezik a thumb futásközével (100% - 20px) */
+    .slider-scale {
+      position: relative;
+      width: calc(100% - 20px);
+      margin: 2px auto 0 auto;
+      height: 18px;
     }
 
-    .beat-col {
+    .scale-mark {
+      position: absolute;
+      transform: translateX(-50%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.35rem;
-      flex-shrink: 0;
-    }
-
-    /* Fő ütések: 13 px jól látható korongok */
-    .beat-dot.main-beat {
-      width: 13px;
-      height: 13px;
-      border-radius: 50%;
-      background: var(--beat-dot-color);
-      border: 2px solid var(--beat-dot-color);
-      transition: all 0.08s;
-    }
-
-    /* Szubdivíziók: 9 px tiszta körök */
-    .beat-dot.sub {
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      background: transparent;
-      border: 2px solid var(--beat-dot-color);
-      opacity: 0.7;
-      transition: all 0.08s;
-    }
-
-    .strum-arrow {
-      font-size: 1.15rem;
-      font-weight: 900;
-      line-height: 1;
+      cursor: pointer;
+      color: var(--sub);
       user-select: none;
-      transition: all 0.08s;
+      transition: color 0.15s;
+    }
+    .scale-mark:hover {
+      color: var(--text-b);
+    }
+    .scale-tick {
+      width: 1.5px;
+      height: 4px;
+      background: var(--border);
+      margin-bottom: 2px;
+    }
+    .scale-num {
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
     }
 
-    .strum-down .strum-arrow { color: var(--strum-down-dim); }
-    .strum-up .strum-arrow { color: var(--strum-up-dim); }
+    .step-btn { background: var(--btn); border: 1px solid var(--border); color: var(--text-b); width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; flex-shrink: 0; }
 
+    .vol-row { background: var(--panel); border: 1px solid var(--border); border-radius: 9px; padding: 0.35rem 0.65rem; display: flex; align-items: center; gap: 0.65rem; font-size: 0.68rem; font-weight: 700; color: var(--sub); }
+    .vol-row span span { color: var(--text-b); }
+    .vol-row input { height: 4px; }
+    .silent-btn { background: var(--btn); border: 1px solid var(--border); color: var(--text); padding: 0.25rem 0.55rem; border-radius: 6px; cursor: pointer; font-size: 0.68rem; font-weight: 700; }
+    .silent-btn.active { background: #da3633; border-color: #f85149; color: #fff; }
+
+    .group-header { display: flex; justify-content: space-between; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--sub); margin-bottom: 0.3rem; }
+    .grid { display: grid; gap: 0.3rem; }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-6 { grid-template-columns: repeat(6, 1fr); }
+
+    .toggle-btn { background: var(--btn); border: 1px solid var(--border); color: var(--text); padding: 0.48rem 0.2rem; border-radius: 8px; cursor: pointer; font-size: 0.76rem; font-weight: 500; text-align: center; transition: all 0.15s; }
+    .toggle-btn.active { background: var(--accent-str); border-color: var(--accent); color: #fff; }
+    .toggle-btn .sub-label { font-size: 0.6rem; opacity: 0.75; display: block; }
+
+    .note-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; padding: 0.45rem 0.15rem; }
+    .note-icon { height: 18px; display: flex; align-items: center; justify-content: center; color: currentColor; }
+    .note-icon svg { fill: currentColor; }
+    .note-name { font-size: 0.68rem; font-weight: 600; }
+
+    .practice-btn.active { background: var(--mode-bg); border-color: var(--mode-brd); color: #fff; }
+
+    .collapsible { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .collapse-btn { width: 100%; background: transparent; border: none; padding: 0.65rem 0.8rem; display: flex; justify-content: space-between; color: var(--text); cursor: pointer; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+    .collapse-content { display: none; padding: 0.2rem 0.75rem 0.75rem; flex-direction: column; gap: 0.75rem; border-top: 1px solid var(--border); }
+    .collapsible.open .collapse-content { display: flex; }
+    .collapsible.open .chevron { transform: rotate(180deg); }
+
+    .ladder-panel { display: flex; flex-direction: column; gap: 0.45rem; }
+    .ladder-panel input { width: 100%; background: var(--btn); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 0.25rem; font-size: 0.8rem; text-align: center; outline: none; }
+    .ladder-panel label { font-size: 0.65rem; text-transform: uppercase; color: var(--sub); }
+
+    .beat-indicators { display: flex; gap: 6px; justify-content: center; align-items: center; min-height: 64px; background: var(--bg); padding: 0.5rem; border-radius: 12px; border: 1px solid var(--border); }
+    .beat-col { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; }
+    .beat-dot { border-radius: 50%; transition: all 0.08s; }
+    .beat-dot.main { width: 13px; height: 13px; background: var(--dot); border: 2px solid var(--dot); }
+    .beat-dot.sub { width: 9px; height: 9px; border: 2px solid var(--dot); opacity: 0.7; }
+    .strum-arrow { font-size: 1.15rem; font-weight: 900; line-height: 1; user-select: none; }
+    .strum-down .strum-arrow { color: var(--down-dim); }
+    .strum-up .strum-arrow { color: var(--up-dim); }
     .beat-col.active { transform: scale(1.15); }
-    .beat-col.active.strum-down .beat-dot {
-      background: var(--strum-down) !important;
-      border-color: var(--strum-down) !important;
-      box-shadow: 0 0 12px var(--strum-down);
-    }
-    .beat-col.active.strum-down .strum-arrow {
-      color: var(--strum-down);
-      filter: drop-shadow(0 0 8px var(--strum-down));
-    }
+    .beat-col.active.strum-down .beat-dot { background: var(--down) !important; border-color: var(--down) !important; box-shadow: 0 0 12px var(--down); }
+    .beat-col.active.strum-down .strum-arrow { color: var(--down); filter: drop-shadow(0 0 8px var(--down)); }
+    .beat-col.active.strum-up .beat-dot { background: var(--up) !important; border-color: var(--up) !important; box-shadow: 0 0 12px var(--up); }
+    .beat-col.active.strum-up .strum-arrow { color: var(--up); filter: drop-shadow(0 0 8px var(--up)); }
+    .training-wheels-off .is-sub { opacity: 0.12; }
+    .training-wheels-off .is-sub .strum-arrow { visibility: hidden; }
 
-    .beat-col.active.strum-up .beat-dot {
-      background: var(--strum-up) !important;
-      border-color: var(--strum-up) !important;
-      box-shadow: 0 0 12px var(--strum-up);
-    }
-    .beat-col.active.strum-up .strum-arrow {
-      color: var(--strum-up);
-      filter: drop-shadow(0 0 8px var(--strum-up));
-    }
-
-    .training-wheels-off .beat-col.is-subdivision { opacity: 0.12; }
-    .training-wheels-off .beat-col.is-subdivision .strum-arrow { visibility: hidden; }
-
-    /* Enyhe, kényelmes igazítás ha sok a tizenhatod (12+ elem), hogy kényelmesen elférjen */
-    .beat-indicators.compact-view {
-      gap: 3.5px;
-      padding: 0.65rem 0.35rem;
-    }
-    .beat-indicators.compact-view .beat-col {
-      gap: 0.28rem;
-    }
-    .beat-indicators.compact-view .beat-dot.main-beat {
-      width: 11px;
-      height: 11px;
-      border-width: 2px;
-    }
-    .beat-indicators.compact-view .beat-dot.sub {
-      width: 8px;
-      height: 8px;
-      border-width: 1.8px;
-    }
-    .beat-indicators.compact-view .strum-arrow {
-      font-size: 0.95rem;
-    }
+    .beat-indicators.compact { gap: 3.5px; }
+    .beat-indicators.compact .beat-dot.main { width: 11px; height: 11px; }
+    .beat-indicators.compact .beat-dot.sub { width: 8px; height: 8px; }
+    .beat-indicators.compact .strum-arrow { font-size: 0.95rem; }
 
     .action-row {
       display: grid;
       grid-template-columns: 2fr 1fr;
       gap: 0.65rem;
-      margin-top: 0.1rem;
+      margin-top: 0.2rem;
     }
 
     .primary-btn {
       background: #238636;
-      border: none;
-      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
       font-size: 1.05rem;
-      font-weight: 600;
-      padding: 0.8rem;
-      border-radius: 8px;
+      font-weight: 700;
+      padding: 0.82rem;
+      border-radius: 10px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
+      transition: background 0.15s, transform 0.08s;
     }
-    .primary-btn.playing { background: #da3633; }
+    .primary-btn:active { transform: scale(0.98); }
+    .primary-btn.playing {
+      background: #da3633;
+      box-shadow: 0 4px 12px rgba(218, 54, 51, 0.35);
+    }
 
     .tap-btn {
-      background: var(--btn-bg);
+      background: var(--btn);
       border: 1px solid var(--border);
-      color: var(--text-bright);
-      font-weight: 600;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    /* Standalone Gitár egység */
-    .guitar-standalone-card {
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 1.15rem 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.8rem;
-      box-shadow: 0 12px 28px var(--card-shadow);
-      transition: background-color 0.2s, border-color 0.2s;
-    }
-
-    .guitar-header-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .guitar-title {
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-transform: uppercase;
+      color: var(--text-b);
+      font-size: 0.95rem;
+      font-weight: 800;
       letter-spacing: 0.06em;
-      color: var(--accent);
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-    }
-
-    .beta-badge {
-      font-size: 0.62rem;
-      font-weight: 800;
-      padding: 0.12rem 0.4rem;
-      border-radius: 4px;
-      background: rgba(241, 224, 90, 0.15);
-      color: var(--gold);
-      border: 1px solid var(--gold);
-    }
-
-    .accuracy-badge {
-      font-size: 0.78rem;
-      font-weight: 800;
-      padding: 0.2rem 0.6rem;
-      border-radius: 6px;
-      background: var(--btn-bg);
-      color: var(--sub-text);
-      letter-spacing: 0.05em;
-    }
-    .accuracy-badge.perfect { background: rgba(46, 160, 67, 0.25); color: var(--accuracy-perfect); border: 1px solid var(--accuracy-perfect); }
-    .accuracy-badge.early { background: rgba(241, 224, 90, 0.25); color: var(--accuracy-early); border: 1px solid var(--accuracy-early); }
-    .accuracy-badge.late { background: rgba(255, 123, 114, 0.25); color: var(--accuracy-late); border: 1px solid var(--accuracy-late); }
-
-    .guitar-controls-row {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-    }
-
-    .mic-main-btn {
-      background: var(--btn-bg);
-      border: 1px solid var(--border);
-      color: var(--text-bright);
-      padding: 0.55rem 0.8rem;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
-      font-size: 0.78rem;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-    .mic-main-btn.active { background: #1f6feb; border-color: #58a6ff; color: #fff; }
-
-    .meter-container { flex: 1; display: flex; flex-direction: column; gap: 0.2rem; }
-    .meter-label-row { display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--sub-text); text-transform: uppercase; }
-    .level-meter-wrapper { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
-    .level-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent) 0%, var(--strum-up) 80%, var(--strum-down) 100%); transition: width 0.04s linear; }
-
-    .calib-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.65rem;
-      background: var(--panel-bg);
-      padding: 0.55rem 0.65rem;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-    }
-    .calib-item { display: flex; flex-direction: column; gap: 0.2rem; }
-    .calib-item-header { display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--sub-text); text-transform: uppercase; }
-
-    .guitar-stats-row {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: var(--sub-text);
+      justify-content: center;
+      gap: 0.35rem;
+      user-select: none;
+      transition: background 0.12s, transform 0.08s, border-color 0.12s, box-shadow 0.12s;
     }
-    .guitar-stats-row .highlight { color: var(--text-bright); }
+    .tap-btn:active, .tap-btn.tapped {
+      background: var(--accent-str) !important;
+      border-color: var(--accent) !important;
+      color: #ffffff !important;
+      transform: scale(0.94);
+      box-shadow: 0 0 14px var(--accent);
+    }
+
+    .guitar-header { display: flex; justify-content: space-between; align-items: center; }
+    .guitar-title { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: 0.4rem; }
+    .badge { font-size: 0.62rem; font-weight: 800; padding: 0.12rem 0.4rem; border-radius: 4px; }
+    .beta-badge { background: rgba(241,224,90,0.15); color: var(--gold); border: 1px solid var(--gold); }
+    .acc-badge { background: var(--btn); color: var(--sub); font-size: 0.76rem; padding: 0.2rem 0.6rem; border-radius: 6px; }
+    .acc-badge.perfect { background: rgba(46,160,67,0.25); color: var(--perf); border: 1px solid var(--perf); }
+    .acc-badge.early { background: rgba(241,224,90,0.25); color: var(--early); border: 1px solid var(--early); }
+    .acc-badge.late { background: rgba(255,123,114,0.25); color: var(--late); border: 1px solid var(--late); }
+    .level-meter { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); flex: 1; }
+    .level-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--up) 80%, var(--down)); transition: width 0.04s linear; }
+    .calib-box { background: var(--panel); padding: 0.55rem; border-radius: 8px; border: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(3px); z-index: 100; justify-content: center; align-items: center; padding: 1rem; }
+    .modal-overlay.open { display: flex; }
+    .modal-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 380px; padding: 1.2rem; display: flex; flex-direction: column; gap: 1rem; box-shadow: 0 16px 36px var(--shadow); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+    .modal-header h3 { font-size: 0.95rem; font-weight: 700; color: var(--text-b); text-transform: uppercase; letter-spacing: 0.06em; }
+    .close-btn { background: transparent; border: none; font-size: 1.25rem; color: var(--sub); cursor: pointer; }
   </style>
 </head>
 <body>
@@ -648,122 +264,110 @@
   <div class="app-container">
     <div id="errorBanner"></div>
 
-    <!-- Theme Switcher -->
-    <header class="theme-bar">
-      <span class="theme-label">Theme</span>
-      <div class="theme-buttons" id="themeButtons">
-        <button class="theme-btn active" data-theme-val="system">System</button>
-        <button class="theme-btn" data-theme-val="light">White</button>
-        <button class="theme-btn" data-theme-val="dark">Black</button>
-      </div>
+    <header class="app-header">
+      <div class="brand-title">Tempo<span>Coach</span></div>
+      <button class="gear-btn" id="gearBtn" title="Settings" aria-label="Settings">⚙️</button>
     </header>
 
-    <!-- Main Metronome Unit -->
     <main class="metronome-card">
       <div class="tempo-display">
-        <div class="bpm-input-wrapper">
-          <input type="number" id="bpmInput" class="bpm-input" min="1" max="240" value="120" title="Click to edit, press Enter">
-        </div>
-        <div class="bpm-label" id="bpmSubText">BPM (1 – 240) • Press Enter</div>
+        <input type="number" id="bpmInput" class="bpm-input" min="1" max="240" value="120">
+        <div class="tempo-term" id="tempoTerm">MODERATO</div>
+        <div class="bpm-label">BPM (1 – 240) • Press Enter</div>
       </div>
 
-      <div class="slider-row">
+      <!-- Matematikailag pontosan pozicionált csúszka és skála -->
+      <div class="flex-row">
         <button class="step-btn" id="bpmMinus">−</button>
-        <input type="range" id="bpmSlider" min="1" max="240" value="120">
+        <div class="slider-wrapper">
+          <input type="range" id="bpmSlider" min="1" max="240" value="120">
+          <div class="slider-scale" id="bpmScale">
+            <div class="scale-mark" data-val="40" style="left: 16.32%;"><span class="scale-tick"></span><span class="scale-num">40</span></div>
+            <div class="scale-mark" data-val="60" style="left: 24.69%;"><span class="scale-tick"></span><span class="scale-num">60</span></div>
+            <div class="scale-mark" data-val="80" style="left: 33.05%;"><span class="scale-tick"></span><span class="scale-num">80</span></div>
+            <div class="scale-mark" data-val="100" style="left: 41.42%;"><span class="scale-tick"></span><span class="scale-num">100</span></div>
+            <div class="scale-mark" data-val="120" style="left: 49.79%;"><span class="scale-tick"></span><span class="scale-num">120</span></div>
+            <div class="scale-mark" data-val="140" style="left: 58.16%;"><span class="scale-tick"></span><span class="scale-num">140</span></div>
+            <div class="scale-mark" data-val="160" style="left: 66.53%;"><span class="scale-tick"></span><span class="scale-num">160</span></div>
+            <div class="scale-mark" data-val="180" style="left: 74.90%;"><span class="scale-tick"></span><span class="scale-num">180</span></div>
+            <div class="scale-mark" data-val="200" style="left: 83.26%;"><span class="scale-tick"></span><span class="scale-num">200</span></div>
+            <div class="scale-mark" data-val="220" style="left: 91.63%;"><span class="scale-tick"></span><span class="scale-num">220</span></div>
+          </div>
+        </div>
         <button class="step-btn" id="bpmPlus">+</button>
       </div>
 
-      <!-- Compact 1-row Volume & Mute -->
-      <div class="vol-compact-row">
-        <span class="vol-label">VOL <span id="volumeLabel">80%</span></span>
+      <div class="vol-row">
+        <span>VOL <span id="volumeLabel">80%</span></span>
         <input type="range" id="volumeSlider" min="0" max="100" value="80">
         <button class="silent-btn" id="silentToggleBtn">🔇 MUTE</button>
       </div>
 
-      <!-- Time Signatures -->
-      <div class="control-group">
+      <div>
         <div class="group-header"><span>Time Signature</span></div>
-        <div class="time-sig-grid" id="beatsContainer">
-          <button class="toggle-btn time-sig-btn" data-beats="2">2/4</button>
-          <button class="toggle-btn time-sig-btn" data-beats="3">3/4</button>
-          <button class="toggle-btn time-sig-btn active" data-beats="4">4/4</button>
-          <button class="toggle-btn time-sig-btn" data-beats="6">6/8</button>
-          <button class="toggle-btn time-sig-btn" data-beats="7">7/8</button>
-          <button class="toggle-btn time-sig-btn" data-beats="none" title="No Accent on Beat 1">None</button>
+        <div class="grid grid-6" id="beatsContainer">
+          <button class="toggle-btn" data-beats="2">2/4</button>
+          <button class="toggle-btn" data-beats="3">3/4</button>
+          <button class="toggle-btn active" data-beats="4">4/4</button>
+          <button class="toggle-btn" data-beats="6">6/8</button>
+          <button class="toggle-btn" data-beats="7">7/8</button>
+          <button class="toggle-btn" data-beats="none">None</button>
         </div>
       </div>
 
-      <!-- Subdivision -->
-      <div class="control-group">
+      <div>
         <div class="group-header"><span>Subdivision</span></div>
-        <div class="button-grid" id="subdivContainer">
-          <button class="toggle-btn active" data-sub="1">Quarter</button>
-          <button class="toggle-btn" data-sub="2">8th</button>
-          <button class="toggle-btn" data-sub="3">Triplet</button>
-          <button class="toggle-btn" data-sub="4">16th</button>
+        <div class="grid grid-4" id="subdivContainer">
+          <button class="toggle-btn note-btn active" data-sub="1">
+            <span class="note-icon"><svg width="14" height="18" viewBox="0 0 20 28"><ellipse cx="7" cy="21" rx="5.5" ry="3.8" transform="rotate(-25 7 21)"/><rect x="11.5" y="3" width="2.2" height="19"/></svg></span>
+            <span class="note-name">Quarter</span>
+          </button>
+          <button class="toggle-btn note-btn" data-sub="2">
+            <span class="note-icon"><svg width="18" height="18" viewBox="0 0 26 28"><ellipse cx="5" cy="22" rx="4.5" ry="3.2" transform="rotate(-25 5 22)"/><ellipse cx="17" cy="18" rx="4.5" ry="3.2" transform="rotate(-25 17 18)"/><rect x="8.5" y="4" width="2" height="19"/><rect x="20.5" y="2" width="2" height="17"/><polygon points="8.5,4 22.5,2 22.5,5.5 8.5,7.5"/></svg></span>
+            <span class="note-name">Eighth</span>
+          </button>
+          <button class="toggle-btn note-btn" data-sub="3">
+            <span class="note-icon" style="flex-direction:column; gap:1px;">
+              <span style="font-size:0.6rem; font-weight:800; line-height:1;">3</span>
+              <svg width="20" height="13" viewBox="0 0 30 20"><ellipse cx="4" cy="15" rx="3.5" ry="2.5" transform="rotate(-20 4 15)"/><ellipse cx="14" cy="15" rx="3.5" ry="2.5" transform="rotate(-20 14 15)"/><ellipse cx="24" cy="15" rx="3.5" ry="2.5" transform="rotate(-20 24 15)"/><rect x="7" y="2" width="1.8" height="14"/><rect x="17" y="2" width="1.8" height="14"/><rect x="27" y="2" width="1.8" height="14"/><rect x="7" y="2" width="21.8" height="2.5"/></svg>
+            </span>
+            <span class="note-name">Triplet</span>
+          </button>
+          <button class="toggle-btn note-btn" data-sub="4">
+            <span class="note-icon"><svg width="18" height="18" viewBox="0 0 26 28"><ellipse cx="5" cy="22" rx="4.5" ry="3.2" transform="rotate(-25 5 22)"/><ellipse cx="17" cy="18" rx="4.5" ry="3.2" transform="rotate(-25 17 18)"/><rect x="8.5" y="4" width="2" height="19"/><rect x="20.5" y="2" width="2" height="17"/><polygon points="8.5,3.5 22.5,1.5 22.5,4.8 8.5,6.8"/><polygon points="8.5,8 22.5,6 22.5,9.3 8.5,11.3"/></svg></span>
+            <span class="note-name">16th</span>
+          </button>
         </div>
       </div>
 
-      <!-- Collapsible Practice Panel -->
-      <div class="collapsible-card" id="practiceCollapsible">
-        <button type="button" class="collapse-header-btn" id="collapseToggleBtn">
-          <span>🛠️ Practice & Training Tools</span>
-          <span class="collapse-chevron">▼</span>
+      <div class="collapsible" id="practiceCollapsible">
+        <button type="button" class="collapse-btn" id="collapseToggleBtn">
+          <span>🛠️ Practice & Training Tools</span><span class="chevron">▼</span>
         </button>
         <div class="collapse-content">
-          <div class="control-group">
+          <div>
             <div class="group-header"><span>Strumming Direction</span></div>
-            <div class="button-grid-2" id="strumContainer">
-              <button class="toggle-btn active" data-strum="alternate">
-                Alternate (<span style="color:var(--strum-down)">↓</span> <span style="color:var(--strum-up)">↑</span>)
-              </button>
-              <button class="toggle-btn" data-strum="down">
-                Down only (<span style="color:var(--strum-down)">↓</span> <span style="color:var(--strum-down)">↓</span>)
-              </button>
+            <div class="grid grid-2" id="strumContainer">
+              <button class="toggle-btn active" data-strum="alternate">Alternate (<span style="color:var(--down)">↓</span> <span style="color:var(--up)">↑</span>)</button>
+              <button class="toggle-btn" data-strum="down">Down only (<span style="color:var(--down)">↓</span> <span style="color:var(--down)">↓</span>)</button>
             </div>
           </div>
-
-          <div class="control-group">
-            <div class="group-header">
-              <span>Practice Modes</span>
-              <span id="trainerStatus" style="color: var(--mode-active-text); font-weight: 600;"></span>
-            </div>
-            <div class="button-grid-3">
-              <button class="toggle-btn practice-btn" id="btnTrainingWheels">
-                <span>Training Wheels</span>
-                <span class="sub-label">30s then solo</span>
-              </button>
-              <button class="toggle-btn practice-btn" id="btnGapClick">
-                <span>Gap Click</span>
-                <span class="sub-label">3 bars : 1 mute</span>
-              </button>
-              <button class="toggle-btn practice-btn" id="btnRandomDrop">
-                <span>Random Drop</span>
-                <span class="sub-label">Ghost beat</span>
-              </button>
+          <div>
+            <div class="group-header"><span>Modes</span><span id="trainerStatus" style="color:var(--mode-brd);"></span></div>
+            <div class="grid grid-3">
+              <button class="toggle-btn practice-btn" id="btnTrainingWheels">Training Wheels<span class="sub-label">30s solo</span></button>
+              <button class="toggle-btn practice-btn" id="btnGapClick">Gap Click<span class="sub-label">3:1 mute</span></button>
+              <button class="toggle-btn practice-btn" id="btnRandomDrop">Random Drop<span class="sub-label">Ghost</span></button>
             </div>
           </div>
-
           <div class="ladder-panel">
-            <div class="group-header">
-              <span>Auto BPM Ladder & Pyramid</span>
-              <span id="ladderStatusText" style="color: var(--gold); font-weight: 600;"></span>
+            <div class="group-header"><span>Auto BPM Ladder</span><span id="ladderStatusText" style="color:var(--gold);"></span></div>
+            <div class="grid grid-3">
+              <div><label>Start</label><input type="number" id="ladderStartBpm" value="80"></div>
+              <div><label>Target</label><input type="number" id="ladderTargetBpm" value="130"></div>
+              <div><label>Step</label><input type="number" id="ladderStep" value="5"></div>
             </div>
-            <div class="ladder-row">
-              <div class="ladder-field">
-                <label>Start</label>
-                <input type="number" id="ladderStartBpm" value="80">
-              </div>
-              <div class="ladder-field">
-                <label>Target</label>
-                <input type="number" id="ladderTargetBpm" value="130">
-              </div>
-              <div class="ladder-field">
-                <label>Step (+/-)</label>
-                <input type="number" id="ladderStep" value="5">
-              </div>
-            </div>
-            <div class="slider-row" style="margin-top: 0.2rem;">
+            <div class="flex-row" style="margin-top:0.2rem;">
               <button class="toggle-btn" id="btnLadderToggle" style="flex:1;">Ladder: OFF</button>
               <button class="toggle-btn" id="btnPyramidToggle" style="flex:1;">Pyramid: OFF</button>
             </div>
@@ -771,13 +375,9 @@
         </div>
       </div>
 
-      <!-- Session Timer -->
-      <div class="control-group">
-        <div class="group-header">
-          <span>Session Timer</span>
-          <span id="timerCountdown" style="color: var(--gold); font-weight: 700;">Infinite</span>
-        </div>
-        <div class="button-grid" id="timerPresetsContainer">
+      <div>
+        <div class="group-header"><span>Session Timer</span><span id="timerCountdown" style="color:var(--gold); font-weight:700;">Infinite</span></div>
+        <div class="grid grid-4" id="timerContainer">
           <button class="toggle-btn active" data-time="0">OFF</button>
           <button class="toggle-btn" data-time="5">5 min</button>
           <button class="toggle-btn" data-time="10">10 min</button>
@@ -785,963 +385,531 @@
         </div>
       </div>
 
-      <!-- Clear, Visible Rhythm Visualizer -->
       <div class="beat-indicators" id="indicators"></div>
 
       <div class="action-row">
-        <button class="primary-btn" id="playBtn">Start</button>
-        <button class="tap-btn" id="tapBtn">TAP</button>
+        <button class="primary-btn" id="playBtn">▶ Start</button>
+        <button class="tap-btn" id="tapBtn">🥁 TAP</button>
       </div>
     </main>
 
-    <!-- Standalone Guitar Timing Accuracy Unit (BETA) -->
-    <section class="guitar-standalone-card">
-      <div class="guitar-header-row">
-        <div class="guitar-title">
-          <span>🎸 Guitar Timing Accuracy</span>
-          <span class="beta-badge">BETA</span>
-        </div>
-        <div class="accuracy-badge" id="accuracyBadge">Inactive</div>
+    <section class="guitar-card">
+      <div class="guitar-header">
+        <div class="guitar-title">🎸 Guitar Timing Accuracy <span class="badge beta-badge">BETA</span></div>
+        <div class="acc-badge" id="accuracyBadge">Inactive</div>
       </div>
-
-      <div class="guitar-controls-row">
-        <button class="mic-main-btn" id="micToggleBtn">🎙️ Detector: OFF</button>
-        <div class="meter-container">
-          <div class="meter-label-row">
-            <span>Input Level</span>
-            <span id="levelValue">0%</span>
-          </div>
-          <div class="level-meter-wrapper">
-            <div class="level-bar" id="micLevelBar"></div>
-          </div>
-        </div>
+      <div class="flex-row">
+        <button class="toggle-btn" id="micToggleBtn" style="white-space:nowrap; padding:0.55rem 0.8rem;">🎙️ Detector: OFF</button>
+        <div class="level-meter"><div class="level-bar" id="micLevelBar"></div></div>
+        <span id="levelValue" style="font-size:0.65rem; color:var(--sub); width:28px;">0%</span>
       </div>
-
-      <div class="calib-grid">
-        <div class="calib-item">
-          <div class="calib-item-header">
-            <span>Latency Offset</span>
-            <span id="offsetLabel" style="color: var(--accent); font-weight:700;">−60 ms</span>
-          </div>
+      <div class="calib-box">
+        <div>
+          <div class="group-header" style="margin:0 0 0.2rem;"><span>Offset</span><span id="offsetLabel" style="color:var(--accent);">−60 ms</span></div>
           <input type="range" id="latencySlider" min="-150" max="100" value="-60" step="5">
         </div>
-        <div class="calib-item">
-          <div class="calib-item-header">
-            <span>Sensitivity</span>
-            <span id="sensLabel" style="color: var(--accent); font-weight:700;">Medium</span>
-          </div>
+        <div>
+          <div class="group-header" style="margin:0 0 0.2rem;"><span>Sensitivity</span><span id="sensLabel" style="color:var(--accent);">Medium</span></div>
           <input type="range" id="sensitivitySlider" min="1" max="100" value="55">
         </div>
       </div>
-
-      <div class="guitar-stats-row">
-        <span>Accuracy: <span class="highlight" id="accuracyStats">--% (0 hits)</span></span>
-        <span>Offset: <span class="highlight" id="offsetFeedback">0 ms</span></span>
+      <div class="group-header" style="margin:0;">
+        <span>Accuracy: <b id="accuracyStats" style="color:var(--text-b);">--% (0 hits)</b></span>
+        <span>Offset: <b id="offsetFeedback" style="color:var(--text-b);">0 ms</b></span>
       </div>
     </section>
   </div>
 
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Settings</h3>
+        <button class="close-btn" id="closeSettingsBtn">&times;</button>
+      </div>
+      <div>
+        <div class="group-header"><span>Color Theme</span></div>
+        <div class="grid grid-3" id="themeButtons">
+          <button class="toggle-btn active" data-val="system">System</button>
+          <button class="toggle-btn" data-val="light">White</button>
+          <button class="toggle-btn" data-val="dark">Black</button>
+        </div>
+      </div>
+      <div>
+        <div class="group-header"><span>Sound Preset</span></div>
+        <div class="grid grid-2" id="soundPresetContainer" style="gap:0.4rem;">
+          <button class="toggle-btn active" data-sound="digital">Digital Beep</button>
+          <button class="toggle-btn" data-sound="woodblock">Woodblock</button>
+          <button class="toggle-btn" data-sound="drumkit">Drum Kit</button>
+          <button class="toggle-btn" data-sound="mechanical">Mechanical</button>
+          <button class="toggle-btn" data-sound="cowbell" style="grid-column: span 2;">Cowbell & Clave</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
-    window.onerror = function(msg, url, line) {
-      const banner = document.getElementById('errorBanner');
-      if (banner) {
-        banner.style.display = 'block';
-        banner.textContent = 'Error: ' + msg + ' (Line: ' + line + ')';
-      }
-      return false;
+    window.onerror = (m, u, l) => {
+      const b = document.getElementById('errorBanner');
+      if (b) { b.style.display = 'block'; b.textContent = `Error: ${m} (Line: ${l})`; }
     };
 
-    // Theme Management
-    const themeButtons = document.querySelectorAll('#themeButtons .theme-btn');
-    let currentThemeMode = localStorage.getItem('polybeat_theme') || 'system';
-
-    function applyTheme(mode) {
-      currentThemeMode = mode;
-      localStorage.setItem('polybeat_theme', mode);
-
-      themeButtons.forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.themeVal === mode);
+    function bindGroup(id, selector, onSelect) {
+      const el = document.getElementById(id);
+      el.addEventListener('click', e => {
+        const btn = e.target.closest(selector);
+        if (!btn) return;
+        el.querySelectorAll(selector).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        onSelect(btn);
       });
-
-      if (mode === 'system') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-      } else {
-        document.documentElement.setAttribute('data-theme', mode);
-      }
     }
 
-    themeButtons.forEach(btn => {
-      btn.addEventListener('click', () => applyTheme(btn.dataset.themeVal));
-    });
+    function getTempoTerm(bpm) {
+      if (bpm < 60) return "Largo";
+      if (bpm < 76) return "Adagio";
+      if (bpm < 108) return "Andante";
+      if (bpm < 120) return "Moderato";
+      if (bpm < 140) return "Allegretto";
+      if (bpm < 168) return "Allegro";
+      if (bpm < 200) return "Vivace";
+      return "Presto";
+    }
 
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      if (currentThemeMode === 'system') applyTheme('system');
-    });
+    function setTheme(m) {
+      localStorage.setItem('pb_theme', m);
+      document.querySelectorAll('#themeButtons .toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.val === m));
+      document.documentElement.setAttribute('data-theme', m === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : m);
+    }
+    bindGroup('themeButtons', '.toggle-btn', b => setTheme(b.dataset.val));
+    matchMedia('(prefers-color-scheme: dark)').addListener(() => { if ((localStorage.getItem('pb_theme') || 'system') === 'system') setTheme('system'); });
+    setTheme(localStorage.getItem('pb_theme') || 'system');
 
-    applyTheme(currentThemeMode);
+    const settingsModal = document.getElementById('settingsModal');
+    document.getElementById('gearBtn').onclick = () => settingsModal.classList.add('open');
+    document.getElementById('closeSettingsBtn').onclick = () => settingsModal.classList.remove('open');
+    settingsModal.onclick = e => { if (e.target === settingsModal) settingsModal.classList.remove('open'); };
 
-    // Screen Wake Lock
-    let wakeLockSentinel = null;
-
-    async function acquireWakeLock() {
+    let wakeLock = null;
+    async function toggleWake(on) {
       if ('wakeLock' in navigator) {
-        try {
-          wakeLockSentinel = await navigator.wakeLock.request('screen');
-        } catch (err) {}
+        try { if (on && !wakeLock) wakeLock = await navigator.wakeLock.request('screen'); else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; } } catch(e){}
       }
     }
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && metronome.isPlaying) toggleWake(true); });
 
-    async function releaseWakeLock() {
-      if (wakeLockSentinel) {
-        try { await wakeLockSentinel.release(); } catch (err) {}
-        wakeLockSentinel = null;
-      }
-    }
-
-    document.addEventListener('visibilitychange', async () => {
-      if (document.visibilityState === 'visible' && metronome.isPlaying) {
-        await acquireWakeLock();
-      }
-    });
-
-    // Metronome Engine
     class MetronomeEngine {
       constructor() {
-        this.audioCtx = null;
-        this.masterGain = null;
-        this.isPlaying = false;
-        this.bpm = 120;
-        this.beatsPerBar = 4;
-        this.noEmphasis = false;
-        this.subdivision = 1;
-        this.strumPattern = 'alternate';
-        this.volume = 0.8;
-        this.isSilent = false;
-
-        this.trainingWheels = false;
-        this.gapClick = false;
-        this.randomDrop = false;
-
-        this.ladderEnabled = false;
-        this.pyramidEnabled = false;
-        this.ladderStart = 80;
-        this.ladderTarget = 130;
-        this.ladderStep = 5;
-        this.ladderBarsInterval = 4;
-        this.ladderDirection = 1;
-        this.ladderBarCounter = 0;
-
-        this.timerMinutes = 0;
-        this.timerRemainingMs = 0;
-        this.lastTimerTick = 0;
-
-        this.scheduleAheadTime = 0.12;
-        this.nextNoteTime = 0.0;
-        this.currentStep = 0;
-        this.totalBarsElapsed = 0;
-        this.playbackStartTime = 0.0;
-
-        this.bufferFirst = null;
-        this.bufferBeat = null;
-        this.bufferSub = null;
-        this.bufferChime = null;
-
-        this.notesInQueue = [];
-        this.scheduledBeatsHistory = [];
-
-        this.onTick = null;
-        this.onBpmAutoChange = null;
-        this.onTimerUpdate = null;
-        this.onSessionComplete = null;
-
+        this.bpm = 120; this.beatsPerBar = 4; this.subdivision = 1; this.volume = 0.8;
+        this.strumPattern = 'alternate'; this.isPlaying = false; this.isSilent = false;
+        this.noEmphasis = false; this.trainingWheels = false; this.gapClick = false; this.randomDrop = false;
+        this.ladderEnabled = false; this.pyramidEnabled = false; this.ladderStart = 80; this.ladderTarget = 130;
+        this.ladderStep = 5; this.ladderDirection = 1; this.ladderBarCounter = 0;
+        this.timerMinutes = 0; this.timerRemainingMs = 0; this.lastTimerTick = 0;
+        this.nextNoteTime = 0; this.currentStep = 0; this.totalBarsElapsed = 0;
+        this.soundPreset = 'digital';
+        this.notesInQueue = []; this.scheduledBeatsHistory = [];
         this.initWorker();
       }
 
       initWorker() {
         try {
-          const workerCode = `
-            let timer = null;
-            self.onmessage = function(e) {
-              if (e.data === 'start') {
-                if (!timer) timer = setInterval(() => self.postMessage('tick'), 25);
-              } else if (e.data === 'stop') {
-                if (timer) { clearInterval(timer); timer = null; }
-              }
-            };
-          `;
-          const blob = new Blob([workerCode], { type: 'application/javascript' });
-          this.timerWorker = new Worker(URL.createObjectURL(blob));
-          this.timerWorker.onmessage = (e) => {
-            if (e.data === 'tick') {
-              this.scheduler();
-              this.checkSessionTimer();
-            }
-          };
-        } catch (err) {
-          this.fallbackTimer = null;
-          this.timerWorker = {
-            postMessage: (msg) => {
-              if (msg === 'start') {
-                if (!this.fallbackTimer) {
-                  this.fallbackTimer = setInterval(() => {
-                    this.scheduler();
-                    this.checkSessionTimer();
-                  }, 25);
-                }
-              } else if (msg === 'stop') {
-                if (this.fallbackTimer) {
-                  clearInterval(this.fallbackTimer);
-                  this.fallbackTimer = null;
-                }
-              }
-            }
-          };
+          const blob = new Blob(["let t;onmessage=e=>{e.data==='start'?!t&&(t=setInterval(()=>postMessage('tick'),25)):(clearInterval(t),t=null)}"], { type: 'application/javascript' });
+          this.worker = new Worker(URL.createObjectURL(blob));
+          this.worker.onmessage = () => { this.scheduler(); this.checkTimer(); };
+        } catch(e) {
+          this.worker = { postMessage: m => { if (m === 'start') this.fb = setInterval(() => { this.scheduler(); this.checkTimer(); }, 25); else clearInterval(this.fb); } };
         }
       }
 
-      createClickBuffer(freqStart, freqEnd, duration, decayRate, gainFactor = 1.0) {
-        const sampleRate = this.audioCtx.sampleRate;
-        const frameCount = Math.floor(sampleRate * duration);
-        const buffer = this.audioCtx.createBuffer(1, frameCount, sampleRate);
-        const data = buffer.getChannelData(0);
-        let phase = 0;
-
-        for (let i = 0; i < frameCount; i++) {
-          const t = i / sampleRate;
-          const env = Math.exp(-t * decayRate);
-          const currentFreq = freqEnd + (freqStart - freqEnd) * Math.exp(-t * 90);
-          phase += (2 * Math.PI * currentFreq) / sampleRate;
-          const noise = (Math.random() * 2 - 1) * Math.exp(-t * 150);
-          data[i] = (Math.sin(phase) * 0.85 + noise * 0.15) * env * gainFactor;
-        }
-        return buffer;
+      synth(dur, fn) {
+        const sr = this.audioCtx.sampleRate, count = Math.floor(sr * dur), b = this.audioCtx.createBuffer(1, count, sr), d = b.getChannelData(0);
+        for (let i = 0; i < count; i++) d[i] = fn(i / sr, i, sr);
+        return b;
       }
 
-      createChimeBuffer() {
-        const sampleRate = this.audioCtx.sampleRate;
-        const duration = 1.0;
-        const frameCount = Math.floor(sampleRate * duration);
-        const buffer = this.audioCtx.createBuffer(1, frameCount, sampleRate);
-        const data = buffer.getChannelData(0);
-
-        for (let i = 0; i < frameCount; i++) {
-          const t = i / sampleRate;
-          const env = Math.exp(-t * 4.0);
-          data[i] = (Math.sin(2 * Math.PI * 1046.5 * t) * 0.5 + Math.sin(2 * Math.PI * 1318.5 * t) * 0.5) * env * 0.7;
+      buildBuffers() {
+        if (!this.audioCtx) return;
+        const p = this.soundPreset;
+        if (p === 'woodblock') {
+          this.buf1 = this.synth(0.04, t => Math.sin(2 * Math.PI * 1150 * t) * Math.exp(-t * 110));
+          this.buf2 = this.synth(0.035, t => Math.sin(2 * Math.PI * 850 * t) * Math.exp(-t * 125) * 0.85);
+          this.buf3 = this.synth(0.025, t => Math.sin(2 * Math.PI * 620 * t) * Math.exp(-t * 150) * 0.5);
+        } else if (p === 'drumkit') {
+          this.buf1 = this.synth(0.08, t => (Math.sin(2 * Math.PI * (60 + 120 * Math.exp(-t * 40)) * t) * 0.7 + Math.sin(2 * Math.PI * 1400 * t) * 0.3) * Math.exp(-t * 35));
+          this.buf2 = this.synth(0.045, t => (Math.sin(2 * Math.PI * 340 * t) * 0.5 + (Math.random() * 2 - 1) * 0.5) * Math.exp(-t * 90));
+          this.buf3 = this.synth(0.025, t => ((Math.random() * 2 - 1) * 0.8) * Math.exp(-t * 160) * 0.4);
+        } else if (p === 'mechanical') {
+          this.buf1 = this.synth(0.05, t => (Math.sin(2 * Math.PI * 560 * t) * 0.7 + (Math.random() * 2 - 1) * 0.3) * Math.exp(-t * 85));
+          this.buf2 = this.synth(0.04, t => (Math.sin(2 * Math.PI * 440 * t) * 0.7 + (Math.random() * 2 - 1) * 0.3) * Math.exp(-t * 100) * 0.8);
+          this.buf3 = this.synth(0.03, t => (Math.sin(2 * Math.PI * 380 * t) * 0.6 + (Math.random() * 2 - 1) * 0.4) * Math.exp(-t * 120) * 0.45);
+        } else if (p === 'cowbell') {
+          this.buf1 = this.synth(0.08, t => (Math.sin(2 * Math.PI * 587 * t) * 0.5 + Math.sin(2 * Math.PI * 845 * t) * 0.5) * Math.exp(-t * 45));
+          this.buf2 = this.synth(0.035, t => Math.sin(2 * Math.PI * 2200 * t) * Math.exp(-t * 110) * 0.8);
+          this.buf3 = this.synth(0.02, t => (Math.random() * 2 - 1) * Math.exp(-t * 140) * 0.35);
+        } else {
+          this.buf1 = this.synth(0.045, t => Math.sin(t * (800 + 900 * Math.exp(-t * 90)) * 2 * Math.PI) * Math.exp(-t * 95));
+          this.buf2 = this.synth(0.035, t => Math.sin(t * (550 + 650 * Math.exp(-t * 90)) * 2 * Math.PI) * Math.exp(-t * 110) * 0.75);
+          this.buf3 = this.synth(0.025, t => Math.sin(t * (400 + 400 * Math.exp(-t * 90)) * 2 * Math.PI) * Math.exp(-t * 140) * 0.4);
         }
-        return buffer;
+        this.bufChime = this.synth(1.0, t => (Math.sin(2 * Math.PI * 1046.5 * t) + Math.sin(2 * Math.PI * 1318.5 * t)) * 0.35 * Math.exp(-t * 4));
       }
 
       initAudio() {
         if (!this.audioCtx) {
-          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-          this.audioCtx = new AudioContextClass();
-
-          this.masterGain = this.audioCtx.createGain();
-          this.masterGain.gain.setValueAtTime(this.volume, this.audioCtx.currentTime);
-          this.masterGain.connect(this.audioCtx.destination);
-
-          this.bufferFirst = this.createClickBuffer(1700, 800, 0.045, 95, 1.0);
-          this.bufferBeat  = this.createClickBuffer(1200, 550, 0.035, 110, 0.75);
-          this.bufferSub   = this.createClickBuffer(800, 400, 0.025, 140, 0.4);
-          this.bufferChime = this.createChimeBuffer();
+          this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          this.gain = this.audioCtx.createGain();
+          this.gain.gain.setValueAtTime(this.volume, this.audioCtx.currentTime);
+          this.gain.connect(this.audioCtx.destination);
+          this.buildBuffers();
         }
-        if (this.audioCtx.state === 'suspended') {
-          this.audioCtx.resume();
-        }
+        if (this.audioCtx.state === 'suspended') this.audioCtx.resume();
       }
 
-      setVolume(val) {
-        this.volume = Math.max(0, Math.min(1, val));
-        if (this.masterGain && this.audioCtx) {
-          this.masterGain.gain.setValueAtTime(this.volume, this.audioCtx.currentTime);
-        }
-      }
-
-      setBpm(newBpm) {
-        const clamped = Math.max(1, Math.min(240, Math.round(newBpm)));
-        if (clamped === this.bpm) return;
-
+      setBpm(v) {
+        const cl = Math.max(1, Math.min(240, Math.round(v)));
         if (this.isPlaying && this.audioCtx) {
-          const now = this.audioCtx.currentTime;
-          const remaining = this.nextNoteTime - now;
-          if (remaining > 0) {
-            this.nextNoteTime = now + remaining * (this.bpm / clamped);
-          }
+          const rem = this.nextNoteTime - this.audioCtx.currentTime;
+          if (rem > 0) this.nextNoteTime = this.audioCtx.currentTime + rem * (this.bpm / cl);
         }
-        this.bpm = clamped;
+        this.bpm = cl;
       }
 
-      checkSessionTimer() {
-        if (!this.isPlaying || this.timerMinutes === 0) return;
+      checkTimer() {
+        if (!this.isPlaying || !this.timerMinutes) return;
         const now = performance.now();
-        const delta = now - this.lastTimerTick;
+        this.timerRemainingMs -= (now - this.lastTimerTick);
         this.lastTimerTick = now;
-
-        this.timerRemainingMs -= delta;
-        if (this.onTimerUpdate) this.onTimerUpdate(Math.max(0, this.timerRemainingMs));
-
+        if (this.onTimer) this.onTimer(Math.max(0, this.timerRemainingMs));
         if (this.timerRemainingMs <= 0) {
           this.stop();
-          if (this.audioCtx && this.bufferChime) {
-            const chimeSource = this.audioCtx.createBufferSource();
-            chimeSource.buffer = this.bufferChime;
-            chimeSource.connect(this.masterGain);
-            chimeSource.start();
-          }
-          if (this.onSessionComplete) this.onSessionComplete();
+          const s = this.audioCtx.createBufferSource(); s.buffer = this.bufChime; s.connect(this.gain); s.start();
+          if (this.onComplete) this.onComplete();
         }
       }
 
-      handleLadderStep() {
-        if (!this.ladderEnabled) return;
-        this.ladderBarCounter++;
+      scheduleNote(step, time) {
+        const isBeat = (step % this.subdivision === 0), isFirst = !this.noEmphasis && (step === 0);
+        const wheelsOff = this.trainingWheels && (time - this.startTime >= 30.0);
+        const gapMuted = this.gapClick && (this.totalBarsElapsed % 4 === 3);
+        const drop = this.randomDrop && !isFirst && (Math.random() < 0.18);
+        const sound = !this.isSilent && !gapMuted && !(wheelsOff && !isBeat) && !drop;
 
-        if (this.ladderBarCounter >= this.ladderBarsInterval) {
-          this.ladderBarCounter = 0;
-          let nextBpm = this.bpm + (this.ladderDirection * this.ladderStep);
-
-          if (this.ladderDirection > 0) {
-            if (nextBpm >= this.ladderTarget) {
-              nextBpm = this.ladderTarget;
-              if (this.pyramidEnabled) this.ladderDirection = -1;
-            }
-          } else {
-            if (nextBpm <= this.ladderStart) {
-              nextBpm = this.ladderStart;
-              this.ladderDirection = 1;
-            }
-          }
-
-          if (nextBpm !== this.bpm) {
-            this.setBpm(nextBpm);
-            if (this.onBpmAutoChange) {
-              this.onBpmAutoChange(nextBpm, this.ladderDirection);
-            }
-          }
-        }
-      }
-
-      nextNote() {
-        const secondsPerBeat = 60.0 / this.bpm;
-        const secondsPerStep = secondsPerBeat / this.subdivision;
-
-        this.nextNoteTime += secondsPerStep;
-        this.currentStep++;
-
-        const totalStepsInBar = this.beatsPerBar * this.subdivision;
-        if (this.currentStep >= totalStepsInBar) {
-          this.currentStep = 0;
-          this.totalBarsElapsed++;
-          this.handleLadderStep();
-        }
-      }
-
-      scheduleNote(stepNumber, time) {
-        const isBeat = (stepNumber % this.subdivision === 0);
-        const isFirstBeat = !this.noEmphasis && (stepNumber === 0);
-        const isSub = !isBeat;
-
-        const elapsedSeconds = time - this.playbackStartTime;
-        const wheelsAreOff = this.trainingWheels && (elapsedSeconds >= 30.0);
-        const isGapMutedBar = this.gapClick && (this.totalBarsElapsed % 4 === 3);
-
-        let isRandomDropped = false;
-        if (this.randomDrop && !isFirstBeat) {
-          isRandomDropped = (Math.random() < 0.18);
-        }
-
-        let shouldPlaySound = true;
-        if (this.isSilent || isGapMutedBar || (wheelsAreOff && isSub) || isRandomDropped) {
-          shouldPlaySound = false;
-        }
-
-        this.notesInQueue.push({
-          step: stepNumber,
-          time: time,
-          muted: !shouldPlaySound && !this.isSilent,
-          wheelsOff: wheelsAreOff
-        });
-
-        this.scheduledBeatsHistory.push({ time: time, step: stepNumber, evaluated: false });
+        this.notesInQueue.push({ step, time, muted: !sound && !this.isSilent, wheelsOff });
+        this.scheduledBeatsHistory.push({ time, step, evaluated: false });
         if (this.scheduledBeatsHistory.length > 36) this.scheduledBeatsHistory.shift();
 
-        if (shouldPlaySound) {
-          const source = this.audioCtx.createBufferSource();
-          if (isFirstBeat) source.buffer = this.bufferFirst;
-          else if (isBeat) source.buffer = this.bufferBeat;
-          else source.buffer = this.bufferSub;
-
-          source.connect(this.masterGain);
-          source.start(time);
+        if (sound) {
+          const src = this.audioCtx.createBufferSource();
+          src.buffer = isFirst ? this.buf1 : (isBeat ? this.buf2 : this.buf3);
+          src.connect(this.gain); src.start(time);
         }
       }
 
       scheduler() {
-        if (!this.isPlaying) return;
-        while (this.nextNoteTime < this.audioCtx.currentTime + this.scheduleAheadTime) {
+        while (this.isPlaying && this.nextNoteTime < this.audioCtx.currentTime + 0.12) {
           this.scheduleNote(this.currentStep, this.nextNoteTime);
-          this.nextNote();
+          this.nextNoteTime += (60.0 / this.bpm) / this.subdivision;
+          if (++this.currentStep >= this.beatsPerBar * this.subdivision) {
+            this.currentStep = 0; this.totalBarsElapsed++;
+            if (this.ladderEnabled && ++this.ladderBarCounter >= 4) {
+              this.ladderBarCounter = 0;
+              let nb = this.bpm + (this.ladderDirection * this.ladderStep);
+              if (this.ladderDirection > 0 && nb >= this.ladderTarget) { nb = this.ladderTarget; if (this.pyramidEnabled) this.ladderDirection = -1; }
+              else if (this.ladderDirection < 0 && nb <= this.ladderStart) { nb = this.ladderStart; this.ladderDirection = 1; }
+              if (nb !== this.bpm) { this.setBpm(nb); if (this.onLadder) this.onLadder(nb, this.ladderDirection); }
+            }
+          }
         }
       }
 
       start() {
         if (this.isPlaying) return;
-        this.initAudio();
-        this.isPlaying = true;
-        this.currentStep = 0;
-        this.totalBarsElapsed = 0;
-        this.ladderBarCounter = 0;
-        this.ladderDirection = 1;
-
-        if (this.ladderEnabled) {
-          this.setBpm(this.ladderStart);
-          if (this.onBpmAutoChange) this.onBpmAutoChange(this.ladderStart, 1);
-        }
-
-        if (this.timerMinutes > 0) {
-          this.timerRemainingMs = this.timerMinutes * 60 * 1000;
-          this.lastTimerTick = performance.now();
-        }
-
-        this.playbackStartTime = this.audioCtx.currentTime + 0.05;
-        this.nextNoteTime = this.playbackStartTime;
-        this.notesInQueue = [];
-        this.scheduledBeatsHistory = [];
-        this.timerWorker.postMessage('start');
-        acquireWakeLock();
+        this.initAudio(); this.isPlaying = true; this.currentStep = 0; this.totalBarsElapsed = 0; this.ladderBarCounter = 0; this.ladderDirection = 1;
+        if (this.ladderEnabled) { this.setBpm(this.ladderStart); if (this.onLadder) this.onLadder(this.ladderStart, 1); }
+        if (this.timerMinutes) { this.timerRemainingMs = this.timerMinutes * 60000; this.lastTimerTick = performance.now(); }
+        this.startTime = this.nextNoteTime = this.audioCtx.currentTime + 0.05;
+        this.notesInQueue = []; this.scheduledBeatsHistory = [];
+        this.worker.postMessage('start');
+        toggleWake(true);
       }
 
       stop() {
         if (!this.isPlaying) return;
-        this.isPlaying = false;
-        this.timerWorker.postMessage('stop');
-        this.notesInQueue = [];
-        releaseWakeLock();
-      }
-
-      updateVisuals() {
-        if (!this.audioCtx) return;
-        const currentTime = this.audioCtx.currentTime;
-
-        while (this.notesInQueue.length > 0 && this.notesInQueue[0].time <= currentTime) {
-          const currentNote = this.notesInQueue.shift();
-          if (this.onTick) this.onTick(currentNote);
-        }
+        this.isPlaying = false; this.worker.postMessage('stop'); this.notesInQueue = [];
+        toggleWake(false);
       }
     }
 
-    // Guitar Detector Engine
     class GuitarDetector {
-      constructor(audioCtx, metronomeEngine) {
-        this.audioCtx = audioCtx;
-        this.metronome = metronomeEngine;
-        this.stream = null;
-        this.source = null;
-        this.inputGain = null;
-        this.hpFilter = null;
-        this.lpFilter = null;
-        this.analyser = null;
-        this.isActive = false;
-
-        this.dataArray = null;
-        this.lastStrumTime = 0;
-        this.debounceTime = 0.13;
-
-        this.detectorState = 'ready';
-        this.threshold = 0.018;
-        this.latencyOffsetMs = -60;
-
-        this.totalStrums = 0;
-        this.perfectStrums = 0;
-        this.onAccuracyResult = null;
-        this.onLevelUpdate = null;
+      constructor(ctx, eng) {
+        this.ctx = ctx; this.eng = eng; this.active = false; this.state = 'ready';
+        this.threshold = 0.018; this.offsetMs = -60; this.lastStrum = 0; this.total = 0; this.perfect = 0;
       }
 
       async start() {
         try {
-          if (!this.audioCtx) this.metronome.initAudio();
-          this.audioCtx = this.metronome.audioCtx;
-
-          const audioConstraints = {
-            echoCancellation: false,
-            noiseSuppression: false,
-            autoGainControl: false,
-            latency: 0
-          };
-
-          this.stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints, video: false });
-          this.source = this.audioCtx.createMediaStreamSource(this.stream);
-
-          this.inputGain = this.audioCtx.createGain();
-          this.inputGain.gain.setValueAtTime(2.5, this.audioCtx.currentTime);
-
-          this.hpFilter = this.audioCtx.createBiquadFilter();
-          this.hpFilter.type = 'highpass';
-          this.hpFilter.frequency.setValueAtTime(65, this.audioCtx.currentTime);
-
-          this.lpFilter = this.audioCtx.createBiquadFilter();
-          this.lpFilter.type = 'lowpass';
-          this.lpFilter.frequency.setValueAtTime(3000, this.audioCtx.currentTime);
-
-          this.analyser = this.audioCtx.createAnalyser();
-          this.analyser.fftSize = 512;
-          this.dataArray = new Float32Array(this.analyser.fftSize);
-
-          this.source.connect(this.inputGain);
-          this.inputGain.connect(this.hpFilter);
-          this.hpFilter.connect(this.lpFilter);
-          this.lpFilter.connect(this.analyser);
-
-          this.isActive = true;
-          this.totalStrums = 0;
-          this.perfectStrums = 0;
-          this.detectorState = 'ready';
-          this.detectLoop();
+          if (!this.ctx) this.eng.initAudio();
+          this.ctx = this.eng.audioCtx;
+          this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, latency: 0 } });
+          const src = this.ctx.createMediaStreamSource(this.stream), g = this.ctx.createGain(), hp = this.ctx.createBiquadFilter(), lp = this.ctx.createBiquadFilter();
+          g.gain.setValueAtTime(2.5, this.ctx.currentTime);
+          hp.type = 'highpass'; hp.frequency.setValueAtTime(65, this.ctx.currentTime);
+          lp.type = 'lowpass'; lp.frequency.setValueAtTime(3000, this.ctx.currentTime);
+          this.analyser = this.ctx.createAnalyser(); this.analyser.fftSize = 512;
+          this.data = new Float32Array(512);
+          src.connect(g); g.connect(hp); hp.connect(lp); lp.connect(this.analyser);
+          this.active = true; this.total = 0; this.perfect = 0; this.state = 'ready';
+          this.loop();
           return true;
-        } catch (err) {
-          alert("Could not access microphone/audio input!");
-          return false;
-        }
+        } catch(e) { alert("Microphone access failed!"); return false; }
       }
 
       stop() {
-        this.isActive = false;
-        if (this.stream) {
-          this.stream.getTracks().forEach(t => t.stop());
-          this.stream = null;
-        }
-        if (this.source) {
-          this.source.disconnect();
-          this.source = null;
-        }
+        this.active = false;
+        if (this.stream) this.stream.getTracks().forEach(t => t.stop());
       }
 
-      detectLoop() {
-        if (!this.isActive) return;
+      loop() {
+        if (!this.active) return;
+        this.analyser.getFloatTimeDomainData(this.data);
+        let s = 0; for (let i = 0; i < 512; i++) s += this.data[i] * this.data[i];
+        const rms = Math.sqrt(s / 512), now = this.ctx.currentTime;
+        if (this.onLevel) this.onLevel(Math.min(1.0, rms * 14.0));
 
-        this.analyser.getFloatTimeDomainData(this.dataArray);
-
-        let sum = 0;
-        for (let i = 0; i < this.dataArray.length; i++) {
-          sum += this.dataArray[i] * this.dataArray[i];
-        }
-        const rms = Math.sqrt(sum / this.dataArray.length);
-
-        if (this.onLevelUpdate) {
-          this.onLevelUpdate(Math.min(1.0, rms * 14.0));
-        }
-
-        const now = this.audioCtx.currentTime;
-
-        if (this.detectorState === 'ready') {
-          if (rms >= this.threshold && (now - this.lastStrumTime) > this.debounceTime) {
-            this.lastStrumTime = now;
-            this.detectorState = 'holding';
-            this.evaluateStrum(now);
+        if (this.state === 'ready') {
+          if (rms >= this.threshold && (now - this.lastStrum > 0.13)) {
+            this.lastStrum = now; this.state = 'holding'; this.eval(now);
           }
-        } else if (this.detectorState === 'holding') {
-          if ((now - this.lastStrumTime) > this.debounceTime && rms < (this.threshold * 0.65)) {
-            this.detectorState = 'ready';
-          }
+        } else if (now - this.lastStrum > 0.13 && rms < this.threshold * 0.65) {
+          this.state = 'ready';
         }
-
-        requestAnimationFrame(() => this.detectLoop());
+        requestAnimationFrame(() => this.loop());
       }
 
-      evaluateStrum(detectedTime) {
-        if (!this.metronome.isPlaying || this.metronome.scheduledBeatsHistory.length === 0) return;
-
-        const effectiveTime = detectedTime + (this.latencyOffsetMs / 1000.0);
-
-        let closestBeat = null;
-        let minDiffMs = Infinity;
-
-        for (const beat of this.metronome.scheduledBeatsHistory) {
-          const diffMs = (effectiveTime - beat.time) * 1000;
-          if (Math.abs(diffMs) < Math.abs(minDiffMs)) {
-            minDiffMs = diffMs;
-            closestBeat = beat;
-          }
+      eval(t) {
+        if (!this.eng.isPlaying || !this.eng.scheduledBeatsHistory.length) return;
+        const eff = t + (this.offsetMs / 1000);
+        let closest = null, minDiff = Infinity;
+        for (const b of this.eng.scheduledBeatsHistory) {
+          const d = (eff - b.time) * 1000;
+          if (Math.abs(d) < Math.abs(minDiff)) { minDiff = d; closest = b; }
         }
-
-        if (closestBeat && Math.abs(minDiffMs) <= 240) {
-          if (closestBeat.evaluated) return;
-          closestBeat.evaluated = true;
-
-          this.totalStrums++;
-          let category = 'perfect';
-
-          if (Math.abs(minDiffMs) <= 45) {
-            category = 'perfect';
-            this.perfectStrums++;
-          } else if (minDiffMs < -45) {
-            category = 'early';
-          } else {
-            category = 'late';
-          }
-
-          const scorePercent = Math.round((this.perfectStrums / this.totalStrums) * 100);
-
-          if (this.onAccuracyResult) {
-            this.onAccuracyResult({
-              diffMs: Math.round(minDiffMs),
-              category: category,
-              scorePercent: scorePercent,
-              totalStrums: this.totalStrums
-            });
-          }
+        if (closest && Math.abs(minDiff) <= 240 && !closest.evaluated) {
+          closest.evaluated = true; this.total++;
+          const cat = Math.abs(minDiff) <= 45 ? 'perfect' : (minDiff < -45 ? 'early' : 'late');
+          if (cat === 'perfect') this.perfect++;
+          if (this.onRes) this.onRes({ cat, diff: Math.round(minDiff), score: Math.round((this.perfect / this.total) * 100), total: this.total });
         }
       }
     }
 
-    // Controls
     const metronome = new MetronomeEngine();
     let detector = null;
 
-    const bpmInput = document.getElementById('bpmInput');
-    const bpmSlider = document.getElementById('bpmSlider');
-    const bpmMinus = document.getElementById('bpmMinus');
-    const bpmPlus = document.getElementById('bpmPlus');
-    const volumeSlider = document.getElementById('volumeSlider');
-    const volumeLabel = document.getElementById('volumeLabel');
-    const silentToggleBtn = document.getElementById('silentToggleBtn');
-    const playBtn = document.getElementById('playBtn');
-    const tapBtn = document.getElementById('tapBtn');
-    const indicatorsContainer = document.getElementById('indicators');
-    const trainerStatus = document.getElementById('trainerStatus');
-    const timerCountdown = document.getElementById('timerCountdown');
+    const bpmInput = document.getElementById('bpmInput'), bpmSlider = document.getElementById('bpmSlider');
+    const tempoTerm = document.getElementById('tempoTerm'), playBtn = document.getElementById('playBtn'), indContainer = document.getElementById('indicators');
+    const accBadge = document.getElementById('accuracyBadge'), micBar = document.getElementById('micLevelBar');
+    const ladderStart = document.getElementById('ladderStartBpm'), ladderTarget = document.getElementById('ladderTargetBpm'), ladderStep = document.getElementById('ladderStep');
 
-    const practiceCollapsible = document.getElementById('practiceCollapsible');
-    const collapseToggleBtn = document.getElementById('collapseToggleBtn');
-
-    collapseToggleBtn.addEventListener('click', () => {
-      practiceCollapsible.classList.toggle('open');
-    });
-
-    const btnTrainingWheels = document.getElementById('btnTrainingWheels');
-    const btnGapClick = document.getElementById('btnGapClick');
-    const btnRandomDrop = document.getElementById('btnRandomDrop');
-
-    const ladderStartBpm = document.getElementById('ladderStartBpm');
-    const ladderTargetBpm = document.getElementById('ladderTargetBpm');
-    const ladderStep = document.getElementById('ladderStep');
-    const btnLadderToggle = document.getElementById('btnLadderToggle');
-    const btnPyramidToggle = document.getElementById('btnPyramidToggle');
-    const ladderStatusText = document.getElementById('ladderStatusText');
-
-    const micToggleBtn = document.getElementById('micToggleBtn');
-    const micLevelBar = document.getElementById('micLevelBar');
-    const levelValue = document.getElementById('levelValue');
-    const accuracyBadge = document.getElementById('accuracyBadge');
-    const accuracyStats = document.getElementById('accuracyStats');
-    const offsetFeedback = document.getElementById('offsetFeedback');
-    const latencySlider = document.getElementById('latencySlider');
-    const offsetLabel = document.getElementById('offsetLabel');
-    const sensitivitySlider = document.getElementById('sensitivitySlider');
-    const sensLabel = document.getElementById('sensLabel');
-
-    function updateBpm(newBpm) {
-      metronome.setBpm(newBpm);
-      bpmSlider.value = metronome.bpm;
-      bpmInput.value = metronome.bpm;
+    function syncBpm(v) {
+      metronome.setBpm(v);
+      bpmInput.value = bpmSlider.value = metronome.bpm;
+      tempoTerm.textContent = getTempoTerm(metronome.bpm);
     }
+    bpmSlider.oninput = e => syncBpm(parseInt(e.target.value));
+    document.getElementById('bpmMinus').onclick = () => syncBpm(metronome.bpm - 1);
+    document.getElementById('bpmPlus').onclick = () => syncBpm(metronome.bpm + 1);
+    bpmInput.onkeydown = e => { if (e.key === 'Enter') { syncBpm(parseInt(bpmInput.value) || 120); bpmInput.blur(); } };
+    bpmInput.onblur = () => syncBpm(parseInt(bpmInput.value) || 120);
 
-    bpmSlider.addEventListener('input', (e) => updateBpm(parseInt(e.target.value, 10)));
-    bpmMinus.addEventListener('click', () => updateBpm(metronome.bpm - 1));
-    bpmPlus.addEventListener('click', () => updateBpm(metronome.bpm + 1));
-
-    bpmInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        updateBpm(parseInt(bpmInput.value, 10) || 120);
-        bpmInput.blur();
-      }
-    });
-    bpmInput.addEventListener('blur', () => updateBpm(parseInt(bpmInput.value, 10) || 120));
-
-    volumeSlider.addEventListener('input', (e) => {
-      const val = parseInt(e.target.value, 10);
-      volumeLabel.textContent = val + '%';
-      metronome.setVolume(val / 100);
+    // Közvetlen kattintás a skála számaira
+    document.getElementById('bpmScale').addEventListener('click', e => {
+      const mark = e.target.closest('.scale-mark');
+      if (mark) syncBpm(parseInt(mark.dataset.val));
     });
 
-    silentToggleBtn.addEventListener('click', () => {
+    document.getElementById('volumeSlider').oninput = e => {
+      document.getElementById('volumeLabel').textContent = e.target.value + '%';
+      metronome.volume = e.target.value / 100;
+      if (metronome.gain) metronome.gain.gain.setValueAtTime(metronome.volume, metronome.audioCtx.currentTime);
+    };
+    document.getElementById('silentToggleBtn').onclick = function() {
       metronome.isSilent = !metronome.isSilent;
-      silentToggleBtn.classList.toggle('active', metronome.isSilent);
-      silentToggleBtn.textContent = metronome.isSilent ? '🔊 MUTE: ON' : '🔇 MUTE';
-    });
-
-    btnTrainingWheels.addEventListener('click', () => {
-      metronome.trainingWheels = !metronome.trainingWheels;
-      btnTrainingWheels.classList.toggle('active', metronome.trainingWheels);
-    });
-
-    btnGapClick.addEventListener('click', () => {
-      metronome.gapClick = !metronome.gapClick;
-      btnGapClick.classList.toggle('active', metronome.gapClick);
-    });
-
-    btnRandomDrop.addEventListener('click', () => {
-      metronome.randomDrop = !metronome.randomDrop;
-      btnRandomDrop.classList.toggle('active', metronome.randomDrop);
-    });
-
-    function updateLadderSettings() {
-      metronome.ladderStart = parseInt(ladderStartBpm.value, 10) || 80;
-      metronome.ladderTarget = parseInt(ladderTargetBpm.value, 10) || 130;
-      metronome.ladderStep = parseInt(ladderStep.value, 10) || 5;
-    }
-
-    btnLadderToggle.addEventListener('click', () => {
-      metronome.ladderEnabled = !metronome.ladderEnabled;
-      btnLadderToggle.classList.toggle('active', metronome.ladderEnabled);
-      btnLadderToggle.textContent = metronome.ladderEnabled ? 'Ladder: ON' : 'Ladder: OFF';
-      updateLadderSettings();
-    });
-
-    btnPyramidToggle.addEventListener('click', () => {
-      metronome.pyramidEnabled = !metronome.pyramidEnabled;
-      btnPyramidToggle.classList.toggle('active', metronome.pyramidEnabled);
-      btnPyramidToggle.textContent = metronome.pyramidEnabled ? 'Pyramid: ON' : 'Pyramid: OFF';
-    });
-
-    [ladderStartBpm, ladderTargetBpm, ladderStep].forEach(el => {
-      el.addEventListener('change', updateLadderSettings);
-    });
-
-    metronome.onBpmAutoChange = (newBpm, dir) => {
-      bpmSlider.value = newBpm;
-      bpmInput.value = newBpm;
-      ladderStatusText.textContent = dir > 0 ? `▲ (${newBpm})` : `▼ (${newBpm})`;
+      this.classList.toggle('active', metronome.isSilent);
+      this.textContent = metronome.isSilent ? '🔊 MUTE: ON' : '🔇 MUTE';
     };
 
-    micToggleBtn.addEventListener('click', async () => {
+    document.getElementById('collapseToggleBtn').onclick = () => document.getElementById('practiceCollapsible').classList.toggle('open');
+
+    bindGroup('beatsContainer', '.toggle-btn', b => {
+      metronome.noEmphasis = (b.dataset.beats === 'none');
+      metronome.beatsPerBar = metronome.noEmphasis ? 4 : parseInt(b.dataset.beats);
+      metronome.currentStep = 0; renderInd();
+    });
+    bindGroup('subdivContainer', '.toggle-btn', b => {
+      metronome.subdivision = parseInt(b.dataset.sub);
+      metronome.currentStep = 0; renderInd();
+    });
+    bindGroup('strumContainer', '.toggle-btn', b => {
+      metronome.strumPattern = b.dataset.strum; renderInd();
+    });
+    bindGroup('timerContainer', '.toggle-btn', b => {
+      metronome.timerMinutes = parseInt(b.dataset.time);
+      document.getElementById('timerCountdown').textContent = metronome.timerMinutes ? `${metronome.timerMinutes}:00` : 'Infinite';
+    });
+
+    bindGroup('soundPresetContainer', '.toggle-btn', b => {
+      metronome.soundPreset = b.dataset.sound;
+      metronome.buildBuffers();
+    });
+
+    const setupToggle = (id, prop) => {
+      document.getElementById(id).onclick = function() {
+        metronome[prop] = !metronome[prop];
+        this.classList.toggle('active', metronome[prop]);
+      };
+    };
+    setupToggle('btnTrainingWheels', 'trainingWheels');
+    setupToggle('btnGapClick', 'gapClick');
+    setupToggle('btnRandomDrop', 'randomDrop');
+
+    function syncLadder() {
+      metronome.ladderStart = parseInt(ladderStart.value) || 80;
+      metronome.ladderTarget = parseInt(ladderTarget.value) || 130;
+      metronome.ladderStep = parseInt(ladderStep.value) || 5;
+    }
+    [ladderStart, ladderTarget, ladderStep].forEach(el => el.onchange = syncLadder);
+    document.getElementById('btnLadderToggle').onclick = function() {
+      metronome.ladderEnabled = !metronome.ladderEnabled;
+      this.classList.toggle('active', metronome.ladderEnabled);
+      this.textContent = metronome.ladderEnabled ? 'Ladder: ON' : 'Ladder: OFF';
+      syncLadder();
+    };
+    document.getElementById('btnPyramidToggle').onclick = function() {
+      metronome.pyramidEnabled = !metronome.pyramidEnabled;
+      this.classList.toggle('active', metronome.pyramidEnabled);
+      this.textContent = metronome.pyramidEnabled ? 'Pyramid: ON' : 'Pyramid: OFF';
+    };
+
+    metronome.onLadder = (nb, dir) => {
+      bpmInput.value = bpmSlider.value = nb;
+      tempoTerm.textContent = getTempoTerm(nb);
+      document.getElementById('ladderStatusText').textContent = `${dir > 0 ? '▲' : '▼'} (${nb})`;
+    };
+    metronome.onTimer = ms => {
+      const s = Math.ceil(ms / 1000);
+      document.getElementById('timerCountdown').textContent = `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;
+    };
+    metronome.onComplete = () => {
+      playBtn.textContent = '▶ Start'; playBtn.classList.remove('playing');
+      document.querySelectorAll('.beat-col').forEach(c => c.classList.remove('active'));
+      document.getElementById('timerCountdown').textContent = "Time's up!";
+    };
+
+    const micBtn = document.getElementById('micToggleBtn');
+    micBtn.onclick = async () => {
       if (!detector) {
         detector = new GuitarDetector(metronome.audioCtx, metronome);
-        detector.latencyOffsetMs = parseInt(latencySlider.value, 10);
-        applySensitivity(parseInt(sensitivitySlider.value, 10));
-
-        detector.onLevelUpdate = (level) => {
-          const pct = Math.round(level * 100);
-          micLevelBar.style.width = pct + '%';
-          levelValue.textContent = pct + '%';
+        detector.offsetMs = parseInt(document.getElementById('latencySlider').value);
+        detector.onLevel = l => {
+          const p = Math.round(l * 100);
+          micBar.style.width = p + '%';
+          document.getElementById('levelValue').textContent = p + '%';
         };
-
-        detector.onAccuracyResult = (res) => {
-          accuracyBadge.className = 'accuracy-badge ' + res.category;
-          if (res.category === 'perfect') accuracyBadge.textContent = 'PERFECT';
-          else if (res.category === 'early') accuracyBadge.textContent = 'EARLY!';
-          else accuracyBadge.textContent = 'LATE!';
-
-          const sign = res.diffMs > 0 ? '+' : '';
-          offsetFeedback.textContent = `${sign}${res.diffMs} ms`;
-          accuracyStats.textContent = `${res.scorePercent}% (${res.totalStrums} hits)`;
+        detector.onRes = r => {
+          accBadge.className = 'acc-badge ' + r.cat;
+          accBadge.textContent = r.cat.toUpperCase();
+          document.getElementById('offsetFeedback').textContent = (r.diff > 0 ? '+' : '') + r.diff + ' ms';
+          document.getElementById('accuracyStats').textContent = `${r.score}% (${r.total} hits)`;
         };
       }
-
-      if (!detector.isActive) {
-        const ok = await detector.start();
-        if (ok) {
-          micToggleBtn.classList.add('active');
-          micToggleBtn.textContent = '🎙️ Detector: ON';
-          accuracyBadge.textContent = 'Listening...';
-        }
+      if (!detector.active) {
+        if (await detector.start()) { micBtn.classList.add('active'); micBtn.textContent = '🎙️ Detector: ON'; accBadge.textContent = 'Listening...'; }
       } else {
-        detector.stop();
-        micToggleBtn.classList.remove('active');
-        micToggleBtn.textContent = '🎙️ Detector: OFF';
-        accuracyBadge.className = 'accuracy-badge';
-        accuracyBadge.textContent = 'Inactive';
-        micLevelBar.style.width = '0%';
-        levelValue.textContent = '0%';
+        detector.stop(); micBtn.classList.remove('active'); micBtn.textContent = '🎙️ Detector: OFF';
+        accBadge.className = 'acc-badge'; accBadge.textContent = 'Inactive';
+        micBar.style.width = '0%'; document.getElementById('levelValue').textContent = '0%';
       }
-    });
-
-    latencySlider.addEventListener('input', (e) => {
-      const val = parseInt(e.target.value, 10);
-      offsetLabel.textContent = (val > 0 ? '+' : '') + val + ' ms';
-      if (detector) detector.latencyOffsetMs = val;
-    });
-
-    function applySensitivity(val) {
-      let label = 'Medium';
-      if (val < 35) label = 'Low';
-      else if (val > 70) label = 'High';
-      sensLabel.textContent = label;
-
-      if (detector) {
-        detector.threshold = 0.05 - ((val / 100) * 0.045);
-      }
-    }
-
-    sensitivitySlider.addEventListener('input', (e) => {
-      applySensitivity(parseInt(e.target.value, 10));
-    });
-
-    document.querySelectorAll('#timerPresetsContainer .toggle-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#timerPresetsContainer .toggle-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const mins = parseInt(btn.dataset.time, 10);
-        metronome.timerMinutes = mins;
-        timerCountdown.textContent = mins === 0 ? 'Infinite' : `${mins}:00`;
-      });
-    });
-
-    metronome.onTimerUpdate = (msRemaining) => {
-      const totalSec = Math.ceil(msRemaining / 1000);
-      const m = Math.floor(totalSec / 60);
-      const s = totalSec % 60;
-      timerCountdown.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
     };
 
-    metronome.onSessionComplete = () => {
-      playBtn.textContent = 'Start';
-      playBtn.classList.remove('playing');
-      clearHighlights();
-      timerCountdown.textContent = "Time's up!";
+    document.getElementById('latencySlider').oninput = e => {
+      const v = parseInt(e.target.value);
+      document.getElementById('offsetLabel').textContent = (v > 0 ? '+' : '') + v + ' ms';
+      if (detector) detector.offsetMs = v;
+    };
+    document.getElementById('sensitivitySlider').oninput = e => {
+      const v = parseInt(e.target.value);
+      document.getElementById('sensLabel').textContent = v < 35 ? 'Low' : (v > 70 ? 'High' : 'Medium');
+      if (detector) detector.threshold = 0.05 - (v / 100) * 0.045;
     };
 
-    // Visszaállított, jól látható ritmusjelzők
-    function renderIndicators() {
-      indicatorsContainer.innerHTML = '';
-      const totalSteps = metronome.beatsPerBar * metronome.subdivision;
+    function renderInd() {
+      indContainer.innerHTML = '';
+      const total = metronome.beatsPerBar * metronome.subdivision;
+      indContainer.classList.toggle('compact', total > 8);
 
-      indicatorsContainer.classList.remove('compact-view');
-      if (totalSteps > 8) {
-        indicatorsContainer.classList.add('compact-view');
-      }
-
-      for (let i = 0; i < totalSteps; i++) {
-        const col = document.createElement('div');
-        col.className = 'beat-col';
-
-        const isBeat = (i % metronome.subdivision === 0);
+      for (let i = 0; i < total; i++) {
+        const col = document.createElement('div'), isBeat = (i % metronome.subdivision === 0);
+        col.className = 'beat-col' + (isBeat ? '' : ' is-sub');
         const dot = document.createElement('div');
-
-        if (isBeat) {
-          dot.className = 'beat-dot main-beat';
-        } else {
-          dot.className = 'beat-dot sub';
-          col.classList.add('is-subdivision');
-        }
-
+        dot.className = 'beat-dot ' + (isBeat ? 'main' : 'sub');
         const arrow = document.createElement('div');
         arrow.className = 'strum-arrow';
-
         const isDown = (metronome.strumPattern === 'down') || (i % 2 === 0);
-        if (isDown) {
-          col.classList.add('strum-down');
-          arrow.textContent = '↓';
-        } else {
-          col.classList.add('strum-up');
-          arrow.textContent = '↑';
-        }
-
-        col.appendChild(dot);
-        col.appendChild(arrow);
-        indicatorsContainer.appendChild(col);
+        col.classList.add(isDown ? 'strum-down' : 'strum-up');
+        arrow.textContent = isDown ? '↓' : '↑';
+        col.append(dot, arrow);
+        indContainer.appendChild(col);
       }
     }
 
-    document.querySelectorAll('#beatsContainer .toggle-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#beatsContainer .toggle-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-
-        if (btn.dataset.beats === 'none') {
-          metronome.noEmphasis = true;
-          metronome.beatsPerBar = 4;
-        } else {
-          metronome.noEmphasis = false;
-          metronome.beatsPerBar = parseInt(btn.dataset.beats, 10);
-        }
-
-        metronome.currentStep = 0;
-        renderIndicators();
-      });
-    });
-
-    document.querySelectorAll('#subdivContainer .toggle-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#subdivContainer .toggle-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        metronome.subdivision = parseInt(btn.dataset.sub, 10);
-        metronome.currentStep = 0;
-        renderIndicators();
-      });
-    });
-
-    document.querySelectorAll('#strumContainer .toggle-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#strumContainer .toggle-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        metronome.strumPattern = btn.dataset.strum;
-        renderIndicators();
-      });
-    });
-
-    playBtn.addEventListener('click', () => {
+    playBtn.onclick = () => {
       if (!metronome.isPlaying) {
-        updateLadderSettings();
-        metronome.start();
-        playBtn.textContent = 'Stop';
-        playBtn.classList.add('playing');
-        trainerStatus.textContent = '';
+        syncLadder(); metronome.start(); playBtn.textContent = '■ Stop'; playBtn.classList.add('playing');
+        document.getElementById('trainerStatus').textContent = '';
       } else {
-        metronome.stop();
-        playBtn.textContent = 'Start';
-        playBtn.classList.remove('playing');
-        clearHighlights();
-        indicatorsContainer.classList.remove('training-wheels-off');
-        trainerStatus.textContent = '';
-        ladderStatusText.textContent = '';
-      }
-    });
-
-    let tapTimes = [];
-    tapBtn.addEventListener('click', () => {
-      const now = performance.now();
-      if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > 2000) tapTimes = [];
-      tapTimes.push(now);
-      if (tapTimes.length > 4) tapTimes.shift();
-
-      if (tapTimes.length >= 2) {
-        const intervals = [];
-        for (let i = 1; i < tapTimes.length; i++) intervals.push(tapTimes[i] - tapTimes[i - 1]);
-        const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-        updateBpm(Math.round(60000 / avgInterval));
-      }
-    });
-
-    function clearHighlights() {
-      document.querySelectorAll('.beat-col').forEach(col => col.classList.remove('active'));
-    }
-
-    metronome.onTick = (note) => {
-      const cols = indicatorsContainer.children;
-      clearHighlights();
-
-      if (note.wheelsOff) {
-        indicatorsContainer.classList.add('training-wheels-off');
-        trainerStatus.textContent = 'Solo Mode!';
-      } else {
-        indicatorsContainer.classList.remove('training-wheels-off');
-      }
-
-      if (cols[note.step] && !note.muted) {
-        cols[note.step].classList.add('active');
+        metronome.stop(); playBtn.textContent = '▶ Start'; playBtn.classList.remove('playing');
+        document.querySelectorAll('.beat-col').forEach(c => c.classList.remove('active'));
+        indContainer.classList.remove('training-wheels-off');
+        document.getElementById('trainerStatus').textContent = '';
+        document.getElementById('ladderStatusText').textContent = '';
       }
     };
 
-    function renderLoop() {
-      metronome.updateVisuals();
-      requestAnimationFrame(renderLoop);
-    }
-    requestAnimationFrame(renderLoop);
+    let taps = [];
+    const tapBtn = document.getElementById('tapBtn');
+    tapBtn.onclick = () => {
+      tapBtn.classList.add('tapped');
+      setTimeout(() => tapBtn.classList.remove('tapped'), 100);
 
-    renderIndicators();
+      const now = performance.now();
+      if (taps.length && now - taps[taps.length - 1] > 2000) taps = [];
+      taps.push(now);
+      if (taps.length > 4) taps.shift();
+      if (taps.length >= 2) {
+        const diffs = [];
+        for (let i = 1; i < taps.length; i++) diffs.push(taps[i] - taps[i-1]);
+        syncBpm(Math.round(60000 / (diffs.reduce((a, b) => a + b) / diffs.length)));
+      }
+    };
+
+    function updateVisuals() {
+      if (metronome.audioCtx) {
+        const now = metronome.audioCtx.currentTime;
+        while (metronome.notesInQueue.length && metronome.notesInQueue[0].time <= now) {
+          const n = metronome.notesInQueue.shift();
+          indContainer.classList.toggle('training-wheels-off', n.wheelsOff);
+          document.getElementById('trainerStatus').textContent = n.wheelsOff ? 'Solo Mode!' : '';
+          document.querySelectorAll('.beat-col').forEach((c, idx) => {
+            c.classList.toggle('active', idx === n.step && !n.muted);
+          });
+        }
+      }
+      requestAnimationFrame(updateVisuals);
+    }
+    requestAnimationFrame(updateVisuals);
+    renderInd();
+    syncBpm(120);
   </script>
 </body>
 </html>
