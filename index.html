@@ -20,10 +20,13 @@
       --strum-up: #00d2ee;         /* Elektromos cián */
       --strum-up-dim: rgba(0, 210, 238, 0.4);
 
-      /* Gyakorló módok és időzítő */
+      /* Gyakorló módok és visszajelzés */
       --mode-active: #bc8cff;
       --mode-active-border: #d2a8ff;
       --gold: #f1e05a;
+      --accuracy-perfect: #2ea043;
+      --accuracy-early: #f1e05a;
+      --accuracy-late: #ff7b72;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -250,18 +253,14 @@
       outline: none;
     }
 
-    .ladder-field input:focus {
-      border-color: var(--accent);
-    }
+    .ladder-field input:focus { border-color: var(--accent); }
 
     .ladder-toggle-row {
       display: flex;
       gap: 0.5rem;
     }
 
-    .ladder-toggle-row .toggle-btn {
-      flex: 1;
-    }
+    .ladder-toggle-row .toggle-btn { flex: 1; }
 
     /* Silent & Hangerő sor */
     .vol-silent-row {
@@ -287,6 +286,90 @@
       background: #da3633;
       border-color: #f85149;
       color: #fff;
+    }
+
+    /* Mikrofonos Ritmus-pontosságértékelő doboz */
+    .mic-panel {
+      background: #131b26;
+      border: 1px solid #1f3b5c;
+      border-radius: 10px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .mic-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .accuracy-badge {
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      background: #21262d;
+      color: #8b949e;
+      transition: all 0.15s ease;
+    }
+
+    .accuracy-badge.perfect {
+      background: rgba(46, 160, 67, 0.2);
+      color: var(--accuracy-perfect);
+      border: 1px solid var(--accuracy-perfect);
+    }
+    .accuracy-badge.early {
+      background: rgba(241, 224, 90, 0.2);
+      color: var(--accuracy-early);
+      border: 1px solid var(--accuracy-early);
+    }
+    .accuracy-badge.late {
+      background: rgba(255, 123, 114, 0.2);
+      color: var(--accuracy-late);
+      border: 1px solid var(--accuracy-late);
+    }
+
+    .mic-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .mic-toggle-btn {
+      background: #21262d;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.45rem 0.7rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .mic-toggle-btn.active {
+      background: #1f6feb;
+      border-color: #58a6ff;
+      color: #fff;
+    }
+
+    .level-meter-wrapper {
+      flex: 1;
+      height: 8px;
+      background: #21262d;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      position: relative;
+    }
+
+    .level-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--strum-up);
+      transition: width 0.05s linear;
     }
 
     /* Vizuális visszajelző sáv */
@@ -322,7 +405,7 @@
       transition: transform 0.08s, background-color 0.08s, border-color 0.08s, box-shadow 0.08s;
     }
 
-    /* Szubdivízió: Csak egy fehér körív */
+    /* Szubdivízió: Csak fehér körív */
     .beat-dot.sub {
       width: 10px;
       height: 10px;
@@ -428,7 +511,7 @@
       <button class="step-btn" id="bpmPlus">+</button>
     </div>
 
-    <!-- Hangerő & Néma (Silent) mód -->
+    <!-- Hangerő & Néma mód -->
     <div class="control-group">
       <div class="group-header">
         <span>Hangerő & Csendes mód</span>
@@ -523,6 +606,24 @@
       </div>
     </div>
 
+    <!-- Gitár Ritmus-pontosságértékelő (Mikrofon + Sávszűrő) -->
+    <div class="mic-panel">
+      <div class="mic-status-row">
+        <span class="group-header" style="color: #58a6ff;">Gitár Érzékelő (Sávszűrővel)</span>
+        <div class="accuracy-badge" id="accuracyBadge">Inaktív</div>
+      </div>
+      <div class="mic-controls">
+        <button class="mic-toggle-btn" id="micToggleBtn">🎙️ Mikrofon: KI</button>
+        <div class="level-meter-wrapper" title="Gitár bemeneti jelszint">
+          <div class="level-bar" id="micLevelBar"></div>
+        </div>
+      </div>
+      <div class="group-header" style="font-size: 0.7rem; color: #8b949e;">
+        <span id="accuracyStats">Pontosság: --% (0 találat)</span>
+        <span id="offsetFeedback">0 ms</span>
+      </div>
+    </div>
+
     <!-- Session Timer (5 - 10 - 15 perc) -->
     <div class="control-group">
       <div class="group-header">
@@ -564,18 +665,18 @@
         this.gapClick = false;
         this.randomDrop = false;
 
-        // Auto BPM Létra & Piramis állapot
+        // Létra & Piramis
         this.ladderEnabled = false;
         this.pyramidEnabled = false;
         this.ladderStart = 80;
         this.ladderTarget = 130;
         this.ladderStep = 5;
-        this.ladderBarsInterval = 4; // 4 ütemenként léptet
-        this.ladderDirection = 1; // 1 = gyorsul, -1 = lassul (piramis)
+        this.ladderBarsInterval = 4;
+        this.ladderDirection = 1;
         this.ladderBarCounter = 0;
 
-        // Session Timer állapot
-        this.timerMinutes = 0; // 0 = végtelen
+        // Session Timer
+        this.timerMinutes = 0;
         this.timerRemainingMs = 0;
         this.lastTimerTick = 0;
 
@@ -591,6 +692,8 @@
         this.bufferChime = null;
 
         this.notesInQueue = [];
+        this.scheduledBeatsHistory = []; // Legutóbbi ütemek a gitáros pontosságméréshez
+
         this.onTick = null;
         this.onBpmAutoChange = null;
         this.onTimerUpdate = null;
@@ -648,7 +751,6 @@
         for (let i = 0; i < frameCount; i++) {
           const t = i / sampleRate;
           const env = Math.exp(-t * 3.5);
-          // Lágy kéthangú akkord (C6 és E6) az idő lejártának jelzésére
           const tone = Math.sin(2 * Math.PI * 1046.5 * t) * 0.5 + Math.sin(2 * Math.PI * 1318.5 * t) * 0.5;
           data[i] = tone * env * 0.8;
         }
@@ -734,13 +836,13 @@
             if (nextBpm >= this.ladderTarget) {
               nextBpm = this.ladderTarget;
               if (this.pyramidEnabled) {
-                this.ladderDirection = -1; // Célt elérve visszafordul
+                this.ladderDirection = -1;
               }
             }
           } else {
             if (nextBpm <= this.ladderStart) {
               nextBpm = this.ladderStart;
-              this.ladderDirection = 1; // Startot elérve újra felfelé indul
+              this.ladderDirection = 1;
             }
           }
 
@@ -796,9 +898,15 @@
         this.notesInQueue.push({
           step: stepNumber,
           time: time,
-          muted: !shouldPlaySound && !this.isSilent, // Silent módban a vizuális jel megmarad
+          muted: !shouldPlaySound && !this.isSilent,
           wheelsOff: wheelsAreOff
         });
+
+        // Eltároljuk az ütemeket a mikrofonos pengetés időzítésének összevetéséhez
+        this.scheduledBeatsHistory.push({ time: time, step: stepNumber });
+        if (this.scheduledBeatsHistory.length > 32) {
+          this.scheduledBeatsHistory.shift();
+        }
 
         if (shouldPlaySound) {
           const source = this.audioCtx.createBufferSource();
@@ -837,7 +945,6 @@
           if (this.onBpmAutoChange) this.onBpmAutoChange(this.ladderStart, 1);
         }
 
-        // Timer indítása
         if (this.timerMinutes > 0) {
           this.timerRemainingMs = this.timerMinutes * 60 * 1000;
           this.lastTimerTick = performance.now();
@@ -846,6 +953,7 @@
         this.playbackStartTime = this.audioCtx.currentTime + 0.05;
         this.nextNoteTime = this.playbackStartTime;
         this.notesInQueue = [];
+        this.scheduledBeatsHistory = [];
         this.timerWorker.postMessage('start');
       }
 
@@ -869,8 +977,160 @@
       }
     }
 
+    // --- MIKROFONOS GITÁR DETEKTOR ÉS SÁVSZŰRŐ ENGINE ---
+    class GuitarDetector {
+      constructor(audioCtx, metronomeEngine) {
+        this.audioCtx = audioCtx;
+        this.metronome = metronomeEngine;
+        this.stream = null;
+        this.source = null;
+        this.hpFilter = null; // Felüláteresztő szűrő (mély morgás ellen)
+        this.lpFilter = null; // Aluláteresztő szűrő (metronóm klikk levágása)
+        this.analyser = null;
+        this.isActive = false;
+
+        this.dataArray = null;
+        this.lastStrumTime = 0;
+        this.strumThreshold = 0.085; // Dinamikus RMS küszöbérték gitárhoz
+        this.debounceTime = 0.12; // 120ms minimális szünet két pengetés között
+
+        // Statisztikák
+        this.totalStrums = 0;
+        this.perfectStrums = 0;
+        this.onAccuracyResult = null;
+        this.onLevelUpdate = null;
+      }
+
+      async start() {
+        try {
+          if (!this.audioCtx) this.metronome.initAudio();
+          this.audioCtx = this.metronome.audioCtx;
+
+          this.stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          this.source = this.audioCtx.createMediaStreamSource(this.stream);
+
+          // 1. Felüláteresztő szűrő: levágja a 80 Hz alatti mély dübörgést és asztalkopogást
+          this.hpFilter = this.audioCtx.createBiquadFilter();
+          this.hpFilter.type = 'highpass';
+          this.hpFilter.frequency.setValueAtTime(80, this.audioCtx.currentTime);
+          this.hpFilter.Q.setValueAtTime(0.7, this.audioCtx.currentTime);
+
+          // 2. Aluláteresztő szűrő: levágja a 750 Hz feletti sávot (így a metronóm 1200-1800 Hz-es klikkje nem jut be)
+          this.lpFilter = this.audioCtx.createBiquadFilter();
+          this.lpFilter.type = 'lowpass';
+          this.lpFilter.frequency.setValueAtTime(750, this.audioCtx.currentTime);
+          this.lpFilter.Q.setValueAtTime(0.7, this.audioCtx.currentTime);
+
+          // 3. Analizátor a gitárhang tranzienseinek vizsgálatára
+          this.analyser = this.audioCtx.createAnalyser();
+          this.analyser.fftSize = 512;
+          this.dataArray = new Float32Array(this.analyser.fftSize);
+
+          // Lánc: Mikrofon -> High-pass -> Low-pass -> Analyser (NEM kötjük a hangszóróra, nincs gerjedés!)
+          this.source.connect(this.hpFilter);
+          this.hpFilter.connect(this.lpFilter);
+          this.lpFilter.connect(this.analyser);
+
+          this.isActive = true;
+          this.totalStrums = 0;
+          this.perfectStrums = 0;
+          this.detectLoop();
+          return true;
+        } catch (err) {
+          console.error("Mikrofon hozzáférési hiba:", err);
+          alert("Nem sikerült elérni a mikrofont! Kérlek, engedélyezd a böngészőben.");
+          return false;
+        }
+      }
+
+      stop() {
+        this.isActive = false;
+        if (this.stream) {
+          this.stream.getTracks().forEach(track => track.stop());
+          this.stream = null;
+        }
+        if (this.source) {
+          this.source.disconnect();
+          this.source = null;
+        }
+      }
+
+      detectLoop() {
+        if (!this.isActive) return;
+
+        this.analyser.getFloatTimeDomainData(this.dataArray);
+
+        // RMS (effektív hangerő) számítás a szűrt gitársávon
+        let sum = 0;
+        for (let i = 0; i < this.dataArray.length; i++) {
+          sum += this.dataArray[i] * this.dataArray[i];
+        }
+        const rms = Math.sqrt(sum / this.dataArray.length);
+
+        if (this.onLevelUpdate) {
+          this.onLevelUpdate(Math.min(1.0, rms * 5.0)); // UI jelszint
+        }
+
+        const now = this.audioCtx.currentTime;
+
+        // Pengetés tranziens érzékelése
+        if (rms > this.strumThreshold && (now - this.lastStrumTime) > this.debounceTime) {
+          this.lastStrumTime = now;
+          this.evaluateStrum(now);
+        }
+
+        requestAnimationFrame(() => this.detectLoop());
+      }
+
+      evaluateStrum(strumTime) {
+        if (!this.metronome.isPlaying || this.metronome.scheduledBeatsHistory.length === 0) {
+          return;
+        }
+
+        // Megkeressük a legközelebbi metronóm ütést az időben
+        let closestBeat = null;
+        let minDiffMs = Infinity;
+
+        for (const beat of this.metronome.scheduledBeatsHistory) {
+          const diffMs = (strumTime - beat.time) * 1000;
+          if (Math.abs(diffMs) < Math.abs(minDiffMs)) {
+            minDiffMs = diffMs;
+            closestBeat = beat;
+          }
+        }
+
+        // Csak akkor értékeljük, ha az ütés ±180 ms-os ablakában vagyunk
+        if (Math.abs(minDiffMs) <= 180) {
+          this.totalStrums++;
+          let category = 'perfect';
+
+          // Kategorizálás: ±30 ms = Tökéletes, < -30 ms = Sietsz, > +30 ms = Késel
+          if (Math.abs(minDiffMs) <= 30) {
+            category = 'perfect';
+            this.perfectStrums++;
+          } else if (minDiffMs < -30) {
+            category = 'early';
+          } else {
+            category = 'late';
+          }
+
+          const scorePercent = Math.round((this.perfectStrums / this.totalStrums) * 100);
+
+          if (this.onAccuracyResult) {
+            this.onAccuracyResult({
+              diffMs: Math.round(minDiffMs),
+              category: category,
+              scorePercent: scorePercent,
+              totalStrums: this.totalStrums
+            });
+          }
+        }
+      }
+    }
+
     // --- FELÜLETI VEZÉRLÉS ---
     const metronome = new MetronomeEngine();
+    let detector = null;
 
     const bpmInput = document.getElementById('bpmInput');
     const bpmSlider = document.getElementById('bpmSlider');
@@ -895,6 +1155,13 @@
     const btnLadderToggle = document.getElementById('btnLadderToggle');
     const btnPyramidToggle = document.getElementById('btnPyramidToggle');
     const ladderStatusText = document.getElementById('ladderStatusText');
+
+    // Mikrofon & Pontosság UI elemek
+    const micToggleBtn = document.getElementById('micToggleBtn');
+    const micLevelBar = document.getElementById('micLevelBar');
+    const accuracyBadge = document.getElementById('accuracyBadge');
+    const accuracyStats = document.getElementById('accuracyStats');
+    const offsetFeedback = document.getElementById('offsetFeedback');
 
     function updateBpm(newBpm) {
       metronome.setBpm(newBpm);
@@ -922,14 +1189,12 @@
       metronome.setVolume(val / 100);
     });
 
-    // Silent Mód kapcsoló
     silentToggleBtn.addEventListener('click', () => {
       metronome.isSilent = !metronome.isSilent;
       silentToggleBtn.classList.toggle('active', metronome.isSilent);
       silentToggleBtn.textContent = metronome.isSilent ? '🔊 Néma mód: BE' : '🔇 Néma mód: KI';
     });
 
-    // Gyakorló edzőfunkciók
     btnTrainingWheels.addEventListener('click', () => {
       metronome.trainingWheels = !metronome.trainingWheels;
       btnTrainingWheels.classList.toggle('active', metronome.trainingWheels);
@@ -945,7 +1210,6 @@
       btnRandomDrop.classList.toggle('active', metronome.randomDrop);
     });
 
-    // Létra & Piramis vezérlés
     btnLadderToggle.addEventListener('click', () => {
       metronome.ladderEnabled = !metronome.ladderEnabled;
       btnLadderToggle.classList.toggle('active', metronome.ladderEnabled);
@@ -974,6 +1238,46 @@
       bpmInput.value = newBpm;
       ladderStatusText.textContent = dir > 0 ? `▲ Gyorsul (${newBpm})` : `▼ Lassul (${newBpm})`;
     };
+
+    // Mikrofon indítása / leállítása
+    micToggleBtn.addEventListener('click', async () => {
+      if (!detector) {
+        detector = new GuitarDetector(metronome.audioCtx, metronome);
+        detector.onLevelUpdate = (level) => {
+          micLevelBar.style.width = (level * 100) + '%';
+        };
+        detector.onAccuracyResult = (res) => {
+          accuracyBadge.className = 'accuracy-badge ' + res.category;
+          if (res.category === 'perfect') {
+            accuracyBadge.textContent = 'TÖKÉLETES';
+          } else if (res.category === 'early') {
+            accuracyBadge.textContent = 'SIETSZ!';
+          } else {
+            accuracyBadge.textContent = 'KÉSEL!';
+          }
+
+          const sign = res.diffMs > 0 ? '+' : '';
+          offsetFeedback.textContent = `${sign}${res.diffMs} ms`;
+          accuracyStats.textContent = `Pontosság: ${res.scorePercent}% (${res.totalStrums} pengetés)`;
+        };
+      }
+
+      if (!detector.isActive) {
+        const ok = await detector.start();
+        if (ok) {
+          micToggleBtn.classList.add('active');
+          micToggleBtn.textContent = '🎙️ Mikrofon: BE';
+          accuracyBadge.textContent = 'Figyelés...';
+        }
+      } else {
+        detector.stop();
+        micToggleBtn.classList.remove('active');
+        micToggleBtn.textContent = '🎙️ Mikrofon: KI';
+        accuracyBadge.className = 'accuracy-badge';
+        accuracyBadge.textContent = 'Inaktív';
+        micLevelBar.style.width = '0%';
+      }
+    });
 
     // Session Timer vezérlés
     document.querySelectorAll('#timerPresetsContainer .toggle-btn').forEach(btn => {
@@ -1005,7 +1309,6 @@
       timerCountdown.textContent = 'Idő lejárt!';
     };
 
-    // Vizuális sáv felépítése: Fő ütés teli fehér, szubdivízió fehér karika
     function renderIndicators() {
       indicatorsContainer.innerHTML = '';
       const totalSteps = metronome.beatsPerBar * metronome.subdivision;
@@ -1018,9 +1321,9 @@
         const dot = document.createElement('div');
 
         if (isBeat) {
-          dot.className = 'beat-dot main-beat'; // Teli fehér korong
+          dot.className = 'beat-dot main-beat';
         } else {
-          dot.className = 'beat-dot sub';       // Fehér körív
+          dot.className = 'beat-dot sub';
           col.classList.add('is-subdivision');
         }
 
