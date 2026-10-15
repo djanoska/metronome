@@ -14,15 +14,16 @@
       --text: #c9d1d9;
       --text-bright: #ffffff;
 
-      /* Kontrasztos pengetési színek */
+      /* Pengetési színek */
       --strum-down: #ff3b56;       /* Élénkpiros */
       --strum-down-dim: rgba(255, 59, 86, 0.4);
       --strum-up: #00d2ee;         /* Elektromos cián */
       --strum-up-dim: rgba(0, 210, 238, 0.4);
 
-      /* Gyakorló módok jelzőszíne */
+      /* Gyakorló módok és időzítő */
       --mode-active: #bc8cff;
       --mode-active-border: #d2a8ff;
+      --gold: #f1e05a;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -41,17 +42,18 @@
       background: var(--card-bg);
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 2rem;
+      padding: 1.8rem;
       width: 100%;
-      max-width: 480px;
-      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+      max-width: 500px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
       display: flex;
       flex-direction: column;
-      gap: 1.25rem;
+      gap: 1.15rem;
     }
 
     .tempo-display {
       text-align: center;
+      position: relative;
     }
 
     .bpm-input-wrapper {
@@ -61,7 +63,7 @@
     }
 
     .bpm-input {
-      font-size: 4.5rem;
+      font-size: 4.2rem;
       font-weight: 800;
       color: var(--text-bright);
       background: transparent;
@@ -121,11 +123,11 @@
       background: #21262d;
       border: 1px solid var(--border);
       color: var(--text-bright);
-      width: 38px;
-      height: 38px;
+      width: 36px;
+      height: 36px;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -153,29 +155,29 @@
     .button-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 0.5rem;
+      gap: 0.45rem;
     }
 
     .button-grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.5rem;
+      gap: 0.45rem;
     }
 
     .button-grid-3 {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 0.5rem;
+      gap: 0.45rem;
     }
 
     .toggle-btn {
       background: #21262d;
       border: 1px solid var(--border);
       color: var(--text);
-      padding: 0.6rem 0.2rem;
+      padding: 0.55rem 0.2rem;
       border-radius: 8px;
       cursor: pointer;
-      font-size: 0.85rem;
+      font-size: 0.82rem;
       font-weight: 500;
       transition: all 0.2s;
       text-align: center;
@@ -187,18 +189,17 @@
       color: var(--text-bright);
     }
 
-    /* Gyakorló módok egyedi gombstílusa */
     .practice-btn {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 0.15rem;
-      padding: 0.55rem 0.25rem;
+      padding: 0.55rem 0.2rem;
     }
 
     .practice-btn .sub-label {
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       opacity: 0.7;
     }
 
@@ -209,19 +210,97 @@
       box-shadow: 0 0 10px rgba(188, 140, 255, 0.2);
     }
 
-    /* Pengetési sáv */
+    /* Auto BPM Létra doboz */
+    .ladder-panel {
+      background: #11151c;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .ladder-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    .ladder-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .ladder-field label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      color: #8b949e;
+    }
+
+    .ladder-field input {
+      background: #21262d;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: #fff;
+      padding: 0.35rem 0.45rem;
+      font-size: 0.85rem;
+      text-align: center;
+      outline: none;
+    }
+
+    .ladder-field input:focus {
+      border-color: var(--accent);
+    }
+
+    .ladder-toggle-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .ladder-toggle-row .toggle-btn {
+      flex: 1;
+    }
+
+    /* Silent & Hangerő sor */
+    .vol-silent-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .silent-btn {
+      background: #21262d;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.4rem 0.6rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .silent-btn.active {
+      background: #da3633;
+      border-color: #f85149;
+      color: #fff;
+    }
+
+    /* Vizuális visszajelző sáv */
     .beat-indicators {
       display: flex;
       gap: 0.6rem;
       justify-content: center;
-      min-height: 70px;
+      min-height: 72px;
       align-items: center;
       background: #0d1117;
       padding: 0.85rem 0.5rem;
       border-radius: 12px;
       border: 1px solid var(--border);
       overflow-x: auto;
-      position: relative;
     }
 
     .beat-col {
@@ -232,18 +311,25 @@
       transition: opacity 0.3s ease, transform 0.08s ease;
     }
 
-    .beat-dot {
-      width: 12px;
-      height: 12px;
+    /* Fő ütés: Teli fehér korong */
+    .beat-dot.main-beat {
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
-      background: #21262d;
-      border: 1px solid var(--border);
-      transition: transform 0.08s, background-color 0.08s, box-shadow 0.08s;
+      background: #ffffff;
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
+      transition: transform 0.08s, background-color 0.08s, border-color 0.08s, box-shadow 0.08s;
     }
 
+    /* Szubdivízió: Csak egy fehér körív */
     .beat-dot.sub {
-      width: 8px;
-      height: 8px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: transparent;
+      border: 2px solid rgba(255, 255, 255, 0.75);
+      transition: transform 0.08s, background-color 0.08s, border-color 0.08s, box-shadow 0.08s;
     }
 
     .strum-arrow {
@@ -254,26 +340,19 @@
       user-select: none;
     }
 
-    /* Színkezelés: Nyugalmi állapot */
-    .strum-down .strum-arrow {
-      color: var(--strum-down-dim);
-    }
+    .strum-down .strum-arrow { color: var(--strum-down-dim); }
+    .strum-up .strum-arrow { color: var(--strum-up-dim); }
 
-    .strum-up .strum-arrow {
-      color: var(--strum-up-dim);
-    }
-
-    /* Színkezelés: Aktív állapot */
+    /* Villanási állapotok pengetési színkóddal */
     .beat-col.active {
       transform: scale(1.15);
     }
 
     .beat-col.active.strum-down .beat-dot {
-      background: var(--strum-down);
-      border-color: var(--strum-down);
-      box-shadow: 0 0 12px var(--strum-down);
+      background: var(--strum-down) !important;
+      border-color: var(--strum-down) !important;
+      box-shadow: 0 0 14px var(--strum-down) !important;
     }
-
     .beat-col.active.strum-down .strum-arrow {
       color: var(--strum-down);
       filter: drop-shadow(0 0 8px var(--strum-down));
@@ -281,20 +360,18 @@
     }
 
     .beat-col.active.strum-up .beat-dot {
-      background: var(--strum-up);
-      border-color: var(--strum-up);
-      box-shadow: 0 0 12px var(--strum-up);
+      background: var(--strum-up) !important;
+      border-color: var(--strum-up) !important;
+      box-shadow: 0 0 14px var(--strum-up) !important;
     }
-
     .beat-col.active.strum-up .strum-arrow {
       color: var(--strum-up);
       filter: drop-shadow(0 0 8px var(--strum-up));
       transform: scale(1.3);
     }
 
-    /* Mankó-mentes / rejtett szubdivíziók (Training wheels lejárta után) */
     .training-wheels-off .beat-col.is-subdivision {
-      opacity: 0.15;
+      opacity: 0.12;
     }
     .training-wheels-off .beat-col.is-subdivision .strum-arrow {
       visibility: hidden;
@@ -304,7 +381,7 @@
       display: grid;
       grid-template-columns: 2fr 1fr;
       gap: 0.75rem;
-      margin-top: 0.25rem;
+      margin-top: 0.1rem;
     }
 
     .primary-btn {
@@ -342,7 +419,7 @@
       <div class="bpm-input-wrapper">
         <input type="number" id="bpmInput" class="bpm-input" min="1" max="240" value="120" title="Kattints a szerkesztéshez, majd nyomj Entert">
       </div>
-      <div class="bpm-label">BPM (1 – 240) • Nyomj Enter-t a módosításhoz</div>
+      <div class="bpm-label" id="bpmSubText">BPM (1 – 240) • Nyomj Enter-t a módosításhoz</div>
     </div>
 
     <div class="slider-row">
@@ -351,14 +428,15 @@
       <button class="step-btn" id="bpmPlus">+</button>
     </div>
 
-    <!-- Hangerő -->
+    <!-- Hangerő & Néma (Silent) mód -->
     <div class="control-group">
       <div class="group-header">
-        <span>Hangerő</span>
+        <span>Hangerő & Csendes mód</span>
         <span id="volumeLabel">80%</span>
       </div>
-      <div class="slider-row">
+      <div class="vol-silent-row">
         <input type="range" id="volumeSlider" min="0" max="100" value="80">
+        <button class="silent-btn" id="silentToggleBtn">🔇 Néma mód: KI</button>
       </div>
     </div>
 
@@ -397,10 +475,10 @@
       </div>
     </div>
 
-    <!-- Gyakorló módok (Smart Trainer) -->
+    <!-- Gyakorló edzőfunkciók -->
     <div class="control-group">
       <div class="group-header">
-        <span>Gyakorló edzőfunkciók</span>
+        <span>Gyakorló funkciók</span>
         <span id="trainerStatus" style="color: var(--mode-active); font-weight: 600;"></span>
       </div>
       <div class="button-grid-3">
@@ -410,7 +488,7 @@
         </button>
         <button class="toggle-btn practice-btn" id="btnGapClick">
           <span>Gap Click</span>
-          <span class="sub-label">3 ütem hang : 1 csend</span>
+          <span class="sub-label">3 ütem : 1 csend</span>
         </button>
         <button class="toggle-btn practice-btn" id="btnRandomDrop">
           <span>Random Drop</span>
@@ -419,7 +497,47 @@
       </div>
     </div>
 
-    <!-- Ütem és Pengetés Visszajelző Sáv -->
+    <!-- Auto BPM Létra & Piramis doboz -->
+    <div class="ladder-panel">
+      <div class="group-header">
+        <span>Auto BPM Létra & Piramis</span>
+        <span id="ladderStatusText" style="color: var(--gold); font-weight: 600;"></span>
+      </div>
+      <div class="ladder-row">
+        <div class="ladder-field">
+          <label>Start BPM</label>
+          <input type="number" id="ladderStartBpm" min="20" max="240" value="80">
+        </div>
+        <div class="ladder-field">
+          <label>Cél BPM</label>
+          <input type="number" id="ladderTargetBpm" min="20" max="240" value="130">
+        </div>
+        <div class="ladder-field">
+          <label>Lépésköz (+/-)</label>
+          <input type="number" id="ladderStep" min="1" max="20" value="5">
+        </div>
+      </div>
+      <div class="ladder-toggle-row">
+        <button class="toggle-btn" id="btnLadderToggle">Létra: KI</button>
+        <button class="toggle-btn" id="btnPyramidToggle">Piramis mód: KI</button>
+      </div>
+    </div>
+
+    <!-- Session Timer (5 - 10 - 15 perc) -->
+    <div class="control-group">
+      <div class="group-header">
+        <span>Session Timer</span>
+        <span id="timerCountdown" style="color: var(--gold); font-weight: 700;">Végtelen</span>
+      </div>
+      <div class="button-grid" id="timerPresetsContainer">
+        <button class="toggle-btn active" data-time="0">KI</button>
+        <button class="toggle-btn" data-time="5">5 perc</button>
+        <button class="toggle-btn" data-time="10">10 perc</button>
+        <button class="toggle-btn" data-time="15">15 perc</button>
+      </div>
+    </div>
+
+    <!-- Vizuális visszajelző sáv -->
     <div class="beat-indicators" id="indicators"></div>
 
     <div class="action-row">
@@ -439,11 +557,27 @@
         this.subdivision = 1; 
         this.strumPattern = 'alternate';
         this.volume = 0.8;
+        this.isSilent = false;
 
-        // Gyakorló módok állapota
+        // Gyakorló módok
         this.trainingWheels = false;
         this.gapClick = false;
         this.randomDrop = false;
+
+        // Auto BPM Létra & Piramis állapot
+        this.ladderEnabled = false;
+        this.pyramidEnabled = false;
+        this.ladderStart = 80;
+        this.ladderTarget = 130;
+        this.ladderStep = 5;
+        this.ladderBarsInterval = 4; // 4 ütemenként léptet
+        this.ladderDirection = 1; // 1 = gyorsul, -1 = lassul (piramis)
+        this.ladderBarCounter = 0;
+
+        // Session Timer állapot
+        this.timerMinutes = 0; // 0 = végtelen
+        this.timerRemainingMs = 0;
+        this.lastTimerTick = 0;
 
         this.scheduleAheadTime = 0.12;
         this.nextNoteTime = 0.0;
@@ -454,9 +588,13 @@
         this.bufferFirst = null;
         this.bufferBeat = null;
         this.bufferSub = null;
+        this.bufferChime = null;
 
         this.notesInQueue = [];
         this.onTick = null;
+        this.onBpmAutoChange = null;
+        this.onTimerUpdate = null;
+        this.onSessionComplete = null;
 
         this.initWorker();
       }
@@ -466,14 +604,9 @@
           let timer = null;
           self.onmessage = function(e) {
             if (e.data === 'start') {
-              if (!timer) {
-                timer = setInterval(() => self.postMessage('tick'), 25);
-              }
+              if (!timer) timer = setInterval(() => self.postMessage('tick'), 25);
             } else if (e.data === 'stop') {
-              if (timer) {
-                clearInterval(timer);
-                timer = null;
-              }
+              if (timer) { clearInterval(timer); timer = null; }
             }
           };
         `;
@@ -482,6 +615,7 @@
         this.timerWorker.onmessage = (e) => {
           if (e.data === 'tick') {
             this.scheduler();
+            this.checkSessionTimer();
           }
         };
       }
@@ -504,6 +638,23 @@
         return buffer;
       }
 
+      createChimeBuffer() {
+        const sampleRate = this.audioCtx.sampleRate;
+        const duration = 1.2;
+        const frameCount = Math.floor(sampleRate * duration);
+        const buffer = this.audioCtx.createBuffer(1, frameCount, sampleRate);
+        const data = buffer.getChannelData(0);
+
+        for (let i = 0; i < frameCount; i++) {
+          const t = i / sampleRate;
+          const env = Math.exp(-t * 3.5);
+          // Lágy kéthangú akkord (C6 és E6) az idő lejártának jelzésére
+          const tone = Math.sin(2 * Math.PI * 1046.5 * t) * 0.5 + Math.sin(2 * Math.PI * 1318.5 * t) * 0.5;
+          data[i] = tone * env * 0.8;
+        }
+        return buffer;
+      }
+
       initAudio() {
         if (!this.audioCtx) {
           const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -516,6 +667,7 @@
           this.bufferFirst = this.createClickBuffer(1700, 800, 0.045, 95, 1.0);
           this.bufferBeat  = this.createClickBuffer(1200, 550, 0.035, 110, 0.75);
           this.bufferSub   = this.createClickBuffer(800, 400, 0.025, 140, 0.4);
+          this.bufferChime = this.createChimeBuffer();
         }
         if (this.audioCtx.state === 'suspended') {
           this.audioCtx.resume();
@@ -543,6 +695,64 @@
         this.bpm = clamped;
       }
 
+      checkSessionTimer() {
+        if (!this.isPlaying || this.timerMinutes === 0) return;
+        const now = performance.now();
+        const delta = now - this.lastTimerTick;
+        this.lastTimerTick = now;
+
+        this.timerRemainingMs -= delta;
+        if (this.onTimerUpdate) {
+          this.onTimerUpdate(Math.max(0, this.timerRemainingMs));
+        }
+
+        if (this.timerRemainingMs <= 0) {
+          this.stop();
+          this.playChime();
+          if (this.onSessionComplete) this.onSessionComplete();
+        }
+      }
+
+      playChime() {
+        if (this.audioCtx && this.bufferChime) {
+          const chimeSource = this.audioCtx.createBufferSource();
+          chimeSource.buffer = this.bufferChime;
+          chimeSource.connect(this.masterGain);
+          chimeSource.start();
+        }
+      }
+
+      handleLadderStep() {
+        if (!this.ladderEnabled) return;
+        this.ladderBarCounter++;
+
+        if (this.ladderBarCounter >= this.ladderBarsInterval) {
+          this.ladderBarCounter = 0;
+          let nextBpm = this.bpm + (this.ladderDirection * this.ladderStep);
+
+          if (this.ladderDirection > 0) {
+            if (nextBpm >= this.ladderTarget) {
+              nextBpm = this.ladderTarget;
+              if (this.pyramidEnabled) {
+                this.ladderDirection = -1; // Célt elérve visszafordul
+              }
+            }
+          } else {
+            if (nextBpm <= this.ladderStart) {
+              nextBpm = this.ladderStart;
+              this.ladderDirection = 1; // Startot elérve újra felfelé indul
+            }
+          }
+
+          if (nextBpm !== this.bpm) {
+            this.setBpm(nextBpm);
+            if (this.onBpmAutoChange) {
+              this.onBpmAutoChange(nextBpm, this.ladderDirection);
+            }
+          }
+        }
+      }
+
       nextNote() {
         const secondsPerBeat = 60.0 / this.bpm;
         const secondsPerStep = secondsPerBeat / this.subdivision;
@@ -554,6 +764,7 @@
         if (this.currentStep >= totalStepsInBar) {
           this.currentStep = 0;
           this.totalBarsElapsed++;
+          this.handleLadderStep();
         }
       }
 
@@ -562,38 +773,33 @@
         const isFirstBeat = (stepNumber === 0);
         const isSub = !isBeat;
 
-        // 1. Training Wheel ellenőrzés (30 másodperc elteltével levesszük a mankót)
         const elapsedSeconds = time - this.playbackStartTime;
         const wheelsAreOff = this.trainingWheels && (elapsedSeconds >= 30.0);
-
-        // 2. Gap Click logika: minden 4. ütem (3 ütem hang : 1 ütem csend) néma
         const isGapMutedBar = this.gapClick && (this.totalBarsElapsed % 4 === 3);
 
-        // 3. Random Drop logika: ~18% eséllyel elnyel egy hangot (az 1. főütést soha nem dobja el)
         let isRandomDropped = false;
         if (this.randomDrop && !isFirstBeat) {
           isRandomDropped = (Math.random() < 0.18);
         }
 
-        // Hangkibocsátás meghatározása
         let shouldPlaySound = true;
-        if (isGapMutedBar) {
-          shouldPlaySound = false; // A 4. ütem teljesen néma
+        if (this.isSilent) {
+          shouldPlaySound = false;
+        } else if (isGapMutedBar) {
+          shouldPlaySound = false;
         } else if (wheelsAreOff && isSub) {
-          shouldPlaySound = false; // A mankó lejárta után a szubdivíziók elnémulnak
+          shouldPlaySound = false;
         } else if (isRandomDropped) {
-          shouldPlaySound = false; // Véletlenszerű kihagyás
+          shouldPlaySound = false;
         }
 
-        // Esemény továbbítása a vizuális queue-ba
         this.notesInQueue.push({
           step: stepNumber,
           time: time,
-          muted: !shouldPlaySound,
+          muted: !shouldPlaySound && !this.isSilent, // Silent módban a vizuális jel megmarad
           wheelsOff: wheelsAreOff
         });
 
-        // Hangkeltés
         if (shouldPlaySound) {
           const source = this.audioCtx.createBufferSource();
           if (isFirstBeat) {
@@ -623,6 +829,20 @@
         this.isPlaying = true;
         this.currentStep = 0;
         this.totalBarsElapsed = 0;
+        this.ladderBarCounter = 0;
+        this.ladderDirection = 1;
+
+        if (this.ladderEnabled) {
+          this.setBpm(this.ladderStart);
+          if (this.onBpmAutoChange) this.onBpmAutoChange(this.ladderStart, 1);
+        }
+
+        // Timer indítása
+        if (this.timerMinutes > 0) {
+          this.timerRemainingMs = this.timerMinutes * 60 * 1000;
+          this.lastTimerTick = performance.now();
+        }
+
         this.playbackStartTime = this.audioCtx.currentTime + 0.05;
         this.nextNoteTime = this.playbackStartTime;
         this.notesInQueue = [];
@@ -658,14 +878,23 @@
     const bpmPlus = document.getElementById('bpmPlus');
     const volumeSlider = document.getElementById('volumeSlider');
     const volumeLabel = document.getElementById('volumeLabel');
+    const silentToggleBtn = document.getElementById('silentToggleBtn');
     const playBtn = document.getElementById('playBtn');
     const tapBtn = document.getElementById('tapBtn');
     const indicatorsContainer = document.getElementById('indicators');
     const trainerStatus = document.getElementById('trainerStatus');
+    const timerCountdown = document.getElementById('timerCountdown');
 
     const btnTrainingWheels = document.getElementById('btnTrainingWheels');
     const btnGapClick = document.getElementById('btnGapClick');
     const btnRandomDrop = document.getElementById('btnRandomDrop');
+
+    const ladderStartBpm = document.getElementById('ladderStartBpm');
+    const ladderTargetBpm = document.getElementById('ladderTargetBpm');
+    const ladderStep = document.getElementById('ladderStep');
+    const btnLadderToggle = document.getElementById('btnLadderToggle');
+    const btnPyramidToggle = document.getElementById('btnPyramidToggle');
+    const ladderStatusText = document.getElementById('ladderStatusText');
 
     function updateBpm(newBpm) {
       metronome.setBpm(newBpm);
@@ -693,7 +922,14 @@
       metronome.setVolume(val / 100);
     });
 
-    // Gyakorló módok kapcsolói
+    // Silent Mód kapcsoló
+    silentToggleBtn.addEventListener('click', () => {
+      metronome.isSilent = !metronome.isSilent;
+      silentToggleBtn.classList.toggle('active', metronome.isSilent);
+      silentToggleBtn.textContent = metronome.isSilent ? '🔊 Néma mód: BE' : '🔇 Néma mód: KI';
+    });
+
+    // Gyakorló edzőfunkciók
     btnTrainingWheels.addEventListener('click', () => {
       metronome.trainingWheels = !metronome.trainingWheels;
       btnTrainingWheels.classList.toggle('active', metronome.trainingWheels);
@@ -709,6 +945,67 @@
       btnRandomDrop.classList.toggle('active', metronome.randomDrop);
     });
 
+    // Létra & Piramis vezérlés
+    btnLadderToggle.addEventListener('click', () => {
+      metronome.ladderEnabled = !metronome.ladderEnabled;
+      btnLadderToggle.classList.toggle('active', metronome.ladderEnabled);
+      btnLadderToggle.textContent = metronome.ladderEnabled ? 'Létra: BE' : 'Létra: KI';
+      updateLadderSettings();
+    });
+
+    btnPyramidToggle.addEventListener('click', () => {
+      metronome.pyramidEnabled = !metronome.pyramidEnabled;
+      btnPyramidToggle.classList.toggle('active', metronome.pyramidEnabled);
+      btnPyramidToggle.textContent = metronome.pyramidEnabled ? 'Piramis: BE' : 'Piramis: KI';
+    });
+
+    function updateLadderSettings() {
+      metronome.ladderStart = parseInt(ladderStartBpm.value, 10) || 80;
+      metronome.ladderTarget = parseInt(ladderTargetBpm.value, 10) || 130;
+      metronome.ladderStep = parseInt(ladderStep.value, 10) || 5;
+    }
+
+    [ladderStartBpm, ladderTargetBpm, ladderStep].forEach(el => {
+      el.addEventListener('change', updateLadderSettings);
+    });
+
+    metronome.onBpmAutoChange = (newBpm, dir) => {
+      bpmSlider.value = newBpm;
+      bpmInput.value = newBpm;
+      ladderStatusText.textContent = dir > 0 ? `▲ Gyorsul (${newBpm})` : `▼ Lassul (${newBpm})`;
+    };
+
+    // Session Timer vezérlés
+    document.querySelectorAll('#timerPresetsContainer .toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#timerPresetsContainer .toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const mins = parseInt(btn.dataset.time, 10);
+        metronome.timerMinutes = mins;
+
+        if (mins === 0) {
+          timerCountdown.textContent = 'Végtelen';
+        } else {
+          timerCountdown.textContent = `${mins}:00`;
+        }
+      });
+    });
+
+    metronome.onTimerUpdate = (msRemaining) => {
+      const totalSec = Math.ceil(msRemaining / 1000);
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      timerCountdown.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+    };
+
+    metronome.onSessionComplete = () => {
+      playBtn.textContent = 'Indítás';
+      playBtn.classList.remove('playing');
+      clearHighlights();
+      timerCountdown.textContent = 'Idő lejárt!';
+    };
+
+    // Vizuális sáv felépítése: Fő ütés teli fehér, szubdivízió fehér karika
     function renderIndicators() {
       indicatorsContainer.innerHTML = '';
       const totalSteps = metronome.beatsPerBar * metronome.subdivision;
@@ -718,14 +1015,13 @@
         col.className = 'beat-col';
 
         const isBeat = (i % metronome.subdivision === 0);
-        if (!isBeat) {
-          col.classList.add('is-subdivision');
-        }
-
         const dot = document.createElement('div');
-        dot.className = 'beat-dot';
-        if (!isBeat) {
-          dot.classList.add('sub');
+
+        if (isBeat) {
+          dot.className = 'beat-dot main-beat'; // Teli fehér korong
+        } else {
+          dot.className = 'beat-dot sub';       // Fehér körív
+          col.classList.add('is-subdivision');
         }
 
         const arrow = document.createElement('div');
@@ -777,6 +1073,7 @@
 
     playBtn.addEventListener('click', () => {
       if (!metronome.isPlaying) {
+        updateLadderSettings();
         metronome.start();
         playBtn.textContent = 'Leállítás';
         playBtn.classList.add('playing');
@@ -788,6 +1085,7 @@
         clearHighlights();
         indicatorsContainer.classList.remove('training-wheels-off');
         trainerStatus.textContent = '';
+        ladderStatusText.textContent = '';
       }
     });
 
@@ -821,15 +1119,13 @@
       const cols = indicatorsContainer.children;
       clearHighlights();
 
-      // Training wheel vizuális állapotjelzés 30 másodperc után
       if (note.wheelsOff) {
         indicatorsContainer.classList.add('training-wheels-off');
-        trainerStatus.textContent = 'Önálló mód aktív!';
+        trainerStatus.textContent = 'Önálló mód!';
       } else {
         indicatorsContainer.classList.remove('training-wheels-off');
       }
 
-      // Csak akkor villan fel a lépés, ha a hang nem volt némítva (Gap click vagy Drop esetén)
       if (cols[note.step] && !note.muted) {
         cols[note.step].classList.add('active');
       }
