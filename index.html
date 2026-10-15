@@ -13,6 +13,9 @@
       --up: #00d2ee; --up-dim: rgba(0,210,238,0.4);
       --mode-bg: #3b2361; --mode-brd: #d2a8ff; --gold: #f1e05a;
       --perf: #2ea043; --early: #f1e05a; --late: #ff7b72;
+      --pulse-glow: rgba(88, 166, 255, 0.55);
+      --pulse-border: #58a6ff;
+      --pulse-bg: #1d2938; /* Finom, áttetsző fátyol a sötét kártya fölött */
     }
     [data-theme="light"] {
       --bg: #f4f6f8; --card: #ffffff; --panel: #f6f8fa; --border: #d0d7de;
@@ -22,6 +25,9 @@
       --up: #0969da; --up-dim: rgba(9,105,218,0.35);
       --mode-bg: #f2eaff; --mode-brd: #8250df; --gold: #9a6700;
       --perf: #1a7f37; --early: #9a6700; --late: #cf222e;
+      --pulse-glow: rgba(9, 105, 218, 0.4);
+      --pulse-border: #0969da;
+      --pulse-bg: #ebf3fc; /* Halvány jégkék fátyol világos módban */
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -37,7 +43,32 @@
     .gear-btn { background: transparent; border: none; font-size: 1.15rem; cursor: pointer; color: var(--sub); padding: 0.2rem; line-height: 1; transition: transform 0.2s, color 0.2s; }
     .gear-btn:hover { color: var(--text-b); transform: rotate(30deg); }
 
-    .metronome-card { padding: 1.2rem 1rem; display: flex; flex-direction: column; gap: 0.85rem; }
+    /* Fő kártya teljes blokk- és keretpulzálással */
+    .metronome-card {
+      padding: 1.2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+    }
+
+    @keyframes barTurnaroundPulse {
+      0% {
+        border-color: var(--pulse-border);
+        background-color: var(--pulse-bg);
+        box-shadow: 0 0 32px var(--pulse-glow), 0 8px 24px var(--shadow);
+      }
+      100% {
+        border-color: var(--border);
+        background-color: var(--card);
+        box-shadow: 0 8px 24px var(--shadow);
+      }
+    }
+
+    .metronome-card.pulse {
+      animation: barTurnaroundPulse 0.22s ease-out;
+    }
+
     .guitar-card { padding: 1.1rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
 
     .tempo-display { text-align: center; }
@@ -48,9 +79,6 @@
 
     .flex-row { display: flex; align-items: center; gap: 0.65rem; }
 
-    /* ========================================================
-       PONTOS, MATEMATIKAILAG SZINKRONIZÁLT CSÚSZKA ÉS SKÁLA
-       ======================================================== */
     .slider-wrapper {
       flex: 1;
       display: flex;
@@ -95,7 +123,6 @@
       cursor: grab;
     }
 
-    /* A skála szélessége pontosan megegyezik a thumb futásközével (100% - 20px) */
     .slider-scale {
       position: relative;
       width: calc(100% - 20px);
@@ -114,20 +141,9 @@
       user-select: none;
       transition: color 0.15s;
     }
-    .scale-mark:hover {
-      color: var(--text-b);
-    }
-    .scale-tick {
-      width: 1.5px;
-      height: 4px;
-      background: var(--border);
-      margin-bottom: 2px;
-    }
-    .scale-num {
-      font-size: 0.6rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
+    .scale-mark:hover { color: var(--text-b); }
+    .scale-tick { width: 1.5px; height: 4px; background: var(--border); margin-bottom: 2px; }
+    .scale-num { font-size: 0.6rem; font-weight: 700; letter-spacing: -0.02em; }
 
     .step-btn { background: var(--btn); border: 1px solid var(--border); color: var(--text-b); width: 34px; height: 34px; border-radius: 8px; cursor: pointer; font-size: 1.1rem; flex-shrink: 0; }
 
@@ -269,14 +285,13 @@
       <button class="gear-btn" id="gearBtn" title="Settings" aria-label="Settings">⚙️</button>
     </header>
 
-    <main class="metronome-card">
+    <main class="metronome-card" id="metronomeCard">
       <div class="tempo-display">
         <input type="number" id="bpmInput" class="bpm-input" min="1" max="240" value="120">
         <div class="tempo-term" id="tempoTerm">MODERATO</div>
         <div class="bpm-label">BPM (1 – 240) • Press Enter</div>
       </div>
 
-      <!-- Matematikailag pontosan pozicionált csúszka és skála -->
       <div class="flex-row">
         <button class="step-btn" id="bpmMinus">−</button>
         <div class="slider-wrapper">
@@ -706,6 +721,7 @@
     const metronome = new MetronomeEngine();
     let detector = null;
 
+    const metronomeCard = document.getElementById('metronomeCard');
     const bpmInput = document.getElementById('bpmInput'), bpmSlider = document.getElementById('bpmSlider');
     const tempoTerm = document.getElementById('tempoTerm'), playBtn = document.getElementById('playBtn'), indContainer = document.getElementById('indicators');
     const accBadge = document.getElementById('accuracyBadge'), micBar = document.getElementById('micLevelBar');
@@ -722,7 +738,6 @@
     bpmInput.onkeydown = e => { if (e.key === 'Enter') { syncBpm(parseInt(bpmInput.value) || 120); bpmInput.blur(); } };
     bpmInput.onblur = () => syncBpm(parseInt(bpmInput.value) || 120);
 
-    // Közvetlen kattintás a skála számaira
     document.getElementById('bpmScale').addEventListener('click', e => {
       const mark = e.target.closest('.scale-mark');
       if (mark) syncBpm(parseInt(mark.dataset.val));
@@ -804,6 +819,7 @@
       playBtn.textContent = '▶ Start'; playBtn.classList.remove('playing');
       document.querySelectorAll('.beat-col').forEach(c => c.classList.remove('active'));
       document.getElementById('timerCountdown').textContent = "Time's up!";
+      metronomeCard.classList.remove('pulse');
     };
 
     const micBtn = document.getElementById('micToggleBtn');
@@ -873,6 +889,7 @@
         indContainer.classList.remove('training-wheels-off');
         document.getElementById('trainerStatus').textContent = '';
         document.getElementById('ladderStatusText').textContent = '';
+        metronomeCard.classList.remove('pulse');
       }
     };
 
@@ -900,6 +917,13 @@
           const n = metronome.notesInQueue.shift();
           indContainer.classList.toggle('training-wheels-off', n.wheelsOff);
           document.getElementById('trainerStatus').textContent = n.wheelsOff ? 'Solo Mode!' : '';
+          
+          if (n.step === 0 && !n.muted && !metronome.noEmphasis) {
+            metronomeCard.classList.remove('pulse');
+            void metronomeCard.offsetWidth;
+            metronomeCard.classList.add('pulse');
+          }
+
           document.querySelectorAll('.beat-col').forEach((c, idx) => {
             c.classList.toggle('active', idx === n.step && !n.muted);
           });
