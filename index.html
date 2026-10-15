@@ -11,10 +11,14 @@
       --border: #30363d;
       --accent: #58a6ff;
       --accent-strong: #1f6feb;
-      --accent-first: #ff7b72;
-      --accent-sub: #7ee787;
       --text: #c9d1d9;
       --text-bright: #ffffff;
+
+      /* Kontrasztos pengetési színek */
+      --strum-down: #ff3b56;       /* Élénkpiros */
+      --strum-down-dim: rgba(255, 59, 86, 0.45);
+      --strum-up: #00d2ee;         /* Elektromos cián */
+      --strum-up-dim: rgba(0, 210, 238, 0.45);
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -172,16 +176,16 @@
       color: var(--text-bright);
     }
 
-    /* Pengetési és ütemjelző sáv */
+    /* Pengetési sáv */
     .beat-indicators {
       display: flex;
       gap: 0.6rem;
       justify-content: center;
-      min-height: 64px;
+      min-height: 70px;
       align-items: center;
       background: #0d1117;
-      padding: 0.75rem 0.5rem;
-      border-radius: 10px;
+      padding: 0.85rem 0.5rem;
+      border-radius: 12px;
       border: 1px solid var(--border);
       overflow-x: auto;
     }
@@ -190,61 +194,68 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.45rem;
+      transition: transform 0.08s ease;
     }
 
     .beat-dot {
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       background: #21262d;
       border: 1px solid var(--border);
-      transition: transform 0.08s, background-color 0.08s;
+      transition: transform 0.08s, background-color 0.08s, box-shadow 0.08s;
     }
 
     .beat-dot.sub {
-      width: 9px;
-      height: 9px;
+      width: 8px;
+      height: 8px;
     }
 
     .strum-arrow {
-      font-size: 1.15rem;
-      font-weight: 800;
-      color: #484f58;
+      font-size: 1.25rem;
+      font-weight: 900;
       line-height: 1;
-      transition: transform 0.08s, color 0.08s;
+      transition: transform 0.08s ease, color 0.08s ease, filter 0.08s ease;
       user-select: none;
     }
 
-    /* Aktív állapotok */
-    .beat-col.active-first .beat-dot {
-      background: var(--accent-first);
-      box-shadow: 0 0 12px var(--accent-first);
-      transform: scale(1.35);
+    /* Színkezelés: Nyugalmi állapot */
+    .strum-down .strum-arrow {
+      color: var(--strum-down-dim);
     }
-    .beat-col.active-first .strum-arrow {
-      color: var(--accent-first);
+
+    .strum-up .strum-arrow {
+      color: var(--strum-up-dim);
+    }
+
+    /* Színkezelés: Aktív állapot (villanás) */
+    .beat-col.active {
+      transform: scale(1.15);
+    }
+
+    .beat-col.active.strum-down .beat-dot {
+      background: var(--strum-down);
+      border-color: var(--strum-down);
+      box-shadow: 0 0 12px var(--strum-down);
+    }
+
+    .beat-col.active.strum-down .strum-arrow {
+      color: var(--strum-down);
+      filter: drop-shadow(0 0 8px var(--strum-down));
       transform: scale(1.3);
     }
 
-    .beat-col.active-beat .beat-dot {
-      background: var(--accent);
-      box-shadow: 0 0 10px var(--accent);
-      transform: scale(1.25);
-    }
-    .beat-col.active-beat .strum-arrow {
-      color: var(--accent);
-      transform: scale(1.25);
+    .beat-col.active.strum-up .beat-dot {
+      background: var(--strum-up);
+      border-color: var(--strum-up);
+      box-shadow: 0 0 12px var(--strum-up);
     }
 
-    .beat-col.active-sub .beat-dot {
-      background: var(--accent-sub);
-      box-shadow: 0 0 8px var(--accent-sub);
-      transform: scale(1.2);
-    }
-    .beat-col.active-sub .strum-arrow {
-      color: var(--accent-sub);
-      transform: scale(1.2);
+    .beat-col.active.strum-up .strum-arrow {
+      color: var(--strum-up);
+      filter: drop-shadow(0 0 8px var(--strum-up));
+      transform: scale(1.3);
     }
 
     .action-row {
@@ -298,7 +309,7 @@
       <button class="step-btn" id="bpmPlus">+</button>
     </div>
 
-    <!-- Hangerő szabályzó -->
+    <!-- Hangerő -->
     <div class="control-group">
       <div class="group-header">
         <span>Hangerő</span>
@@ -335,8 +346,12 @@
     <div class="control-group">
       <div class="group-header"><span>Pengetés iránya</span></div>
       <div class="button-grid-2" id="strumContainer">
-        <button class="toggle-btn active" data-strum="alternate">Váltott (↓ ↑)</button>
-        <button class="toggle-btn" data-strum="down">Csak le (↓ ↓)</button>
+        <button class="toggle-btn active" data-strum="alternate">
+          Váltott (<span style="color:var(--strum-down)">↓</span> <span style="color:var(--strum-up)">↑</span>)
+        </button>
+        <button class="toggle-btn" data-strum="down">
+          Csak le (<span style="color:var(--strum-down)">↓</span> <span style="color:var(--strum-down)">↓</span>)
+        </button>
       </div>
     </div>
 
@@ -361,12 +376,10 @@
         this.strumPattern = 'alternate';
         this.volume = 0.8;
 
-        // Időzítési változók
-        this.scheduleAheadTime = 0.12; // Mennyivel ütemezünk előre az AudioContext órájában (másodperc)
+        this.scheduleAheadTime = 0.12;
         this.nextNoteTime = 0.0;
         this.currentStep = 0;
 
-        // Előre generált hangminták (Zero Garbage Collection)
         this.bufferFirst = null;
         this.bufferBeat = null;
         this.bufferSub = null;
@@ -374,7 +387,6 @@
         this.notesInQueue = [];
         this.onTick = null;
 
-        // Web Worker inicializálása memóriából (nem alszik el háttérbe tett fül esetén sem)
         this.initWorker();
       }
 
@@ -403,7 +415,6 @@
         };
       }
 
-      // Perkusszív, akusztikus fa-klikk minták szintetizálása egyetlen alkalommal a memóriába
       createClickBuffer(freqStart, freqEnd, duration, decayRate, gainFactor = 1.0) {
         const sampleRate = this.audioCtx.sampleRate;
         const frameCount = Math.floor(sampleRate * duration);
@@ -416,7 +427,7 @@
           const env = Math.exp(-t * decayRate);
           const currentFreq = freqEnd + (freqStart - freqEnd) * Math.exp(-t * 90);
           phase += (2 * Math.PI * currentFreq) / sampleRate;
-          const noise = (Math.random() * 2 - 1) * Math.exp(-t * 150); // Tranzienst biztosító mikrozaj
+          const noise = (Math.random() * 2 - 1) * Math.exp(-t * 150);
           data[i] = (Math.sin(phase) * 0.85 + noise * 0.15) * env * gainFactor;
         }
         return buffer;
@@ -431,10 +442,9 @@
           this.masterGain.gain.setValueAtTime(this.volume, this.audioCtx.currentTime);
           this.masterGain.connect(this.audioCtx.destination);
 
-          // 3 különböző frekvenciájú, éles fa-klikk előállítása induláskor
-          this.bufferFirst = this.createClickBuffer(1700, 800, 0.045, 95, 1.0);  // 1. hangsúlyos ütés
-          this.bufferBeat  = this.createClickBuffer(1200, 550, 0.035, 110, 0.75); // Normál negyed
-          this.bufferSub   = this.createClickBuffer(800, 400, 0.025, 140, 0.4);   // Szubdivíziós aprózás
+          this.bufferFirst = this.createClickBuffer(1700, 800, 0.045, 95, 1.0);
+          this.bufferBeat  = this.createClickBuffer(1200, 550, 0.035, 110, 0.75);
+          this.bufferSub   = this.createClickBuffer(800, 400, 0.025, 140, 0.4);
         }
         if (this.audioCtx.state === 'suspended') {
           this.audioCtx.resume();
@@ -448,7 +458,6 @@
         }
       }
 
-      // Fázis-megőrző dinamikus BPM állítás: játék közben sincs ugrás vagy dadogás
       setBpm(newBpm) {
         const clamped = Math.max(1, Math.min(240, Math.round(newBpm)));
         if (clamped === this.bpm) return;
@@ -479,7 +488,6 @@
       scheduleNote(stepNumber, time) {
         this.notesInQueue.push({ step: stepNumber, time: time });
 
-        // Könnyű, azonnal induló buffer forrás (nem hoz létre új szűrőket vagy oszcillátort)
         const source = this.audioCtx.createBufferSource();
         const isBeat = (stepNumber % this.subdivision === 0);
         const isFirstBeat = (stepNumber === 0);
@@ -590,10 +598,15 @@
         const arrow = document.createElement('div');
         arrow.className = 'strum-arrow';
 
-        if (metronome.strumPattern === 'alternate') {
-          arrow.textContent = (i % 2 === 0) ? '↓' : '↑';
-        } else {
+        // Pengetés iránya és osztályozása: az 1. hang (i=0) kötelezően lefelé (piros)
+        const isDown = (metronome.strumPattern === 'down') || (i % 2 === 0);
+
+        if (isDown) {
+          col.classList.add('strum-down');
           arrow.textContent = '↓';
+        } else {
+          col.classList.add('strum-up');
+          arrow.textContent = '↑';
         }
 
         col.appendChild(dot);
@@ -644,7 +657,6 @@
       }
     });
 
-    // Tap Tempo kalkuláció
     let tapTimes = [];
     tapBtn.addEventListener('click', () => {
       const now = performance.now();
@@ -667,7 +679,7 @@
 
     function clearHighlights() {
       document.querySelectorAll('.beat-col').forEach(col => {
-        col.classList.remove('active-first', 'active-beat', 'active-sub');
+        col.classList.remove('active');
       });
     }
 
@@ -675,16 +687,7 @@
       const cols = indicatorsContainer.children;
       clearHighlights();
       if (cols[step]) {
-        const isFirst = step === 0;
-        const isBeat = step % metronome.subdivision === 0;
-
-        if (isFirst) {
-          cols[step].classList.add('active-first');
-        } else if (isBeat) {
-          cols[step].classList.add('active-beat');
-        } else {
-          cols[step].classList.add('active-sub');
-        }
+        cols[step].classList.add('active');
       }
     };
 
