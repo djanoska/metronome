@@ -604,7 +604,7 @@
             <span>Érzékenység</span>
             <span id="sensLabel" style="color: #58a6ff; font-weight:700;">Közepes</span>
           </div>
-          <input type="range" id="sensitivitySlider" min="1" max="100" value="50">
+          <input type="range" id="sensitivitySlider" min="1" max="100" value="55">
         </div>
       </div>
 
@@ -624,6 +624,31 @@
       }
       return false;
     };
+
+    let wakeLockSentinel = null;
+
+    async function acquireWakeLock() {
+      if ('wakeLock' in navigator) {
+        try {
+          wakeLockSentinel = await navigator.wakeLock.request('screen');
+        } catch (err) {}
+      }
+    }
+
+    async function releaseWakeLock() {
+      if (wakeLockSentinel) {
+        try {
+          await wakeLockSentinel.release();
+        } catch (err) {}
+        wakeLockSentinel = null;
+      }
+    }
+
+    document.addEventListener('visibilitychange', async () => {
+      if (document.visibilityState === 'visible' && metronome.isPlaying) {
+        await acquireWakeLock();
+      }
+    });
 
     class MetronomeEngine {
       constructor() {
@@ -926,6 +951,7 @@
         this.notesInQueue = [];
         this.scheduledBeatsHistory = [];
         this.timerWorker.postMessage('start');
+        acquireWakeLock();
       }
 
       stop() {
@@ -933,6 +959,7 @@
         this.isPlaying = false;
         this.timerWorker.postMessage('stop');
         this.notesInQueue = [];
+        releaseWakeLock();
       }
 
       updateVisuals() {
@@ -946,12 +973,14 @@
       }
     }
 
+    // --- MEGBÍZHATÓ HISZTERÉZISES GITÁR-ÉRZÉKELŐ MOTOR ---
     class GuitarDetector {
       constructor(audioCtx, metronomeEngine) {
         this.audioCtx = audioCtx;
         this.metronome = metronomeEngine;
         this.stream = null;
         this.source = null;
+        this.inputGain = null;
         this.hpFilter = null;
         this.lpFilter = null;
         this.analyser = null;
@@ -959,11 +988,12 @@
 
         this.dataArray = null;
         this.lastStrumTime = 0;
-        this.debounceTime = 0.16;
+        this.debounceTime = 0.13; // 130 ms holtidő
 
-        this.prevRms = 0;
+        // Schmitt-trigger állapot: 'ready' vagy 'holding'
+        this.detectorState = 'ready';
+        this.threshold = 0.018; // Finomhangolt küszöbszint
         this.latencyOffsetMs = -60;
-        this.threshold = 0.035;
 
         this.totalStrums = 0;
         this.perfectStrums = 0;
@@ -986,26 +1016,34 @@
           this.stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints, video: false });
           this.source = this.audioCtx.createMediaStreamSource(this.stream);
 
+          // 1. Szoftveres előerősítő (+8 dB boost halk mikrofonhoz / Valetonhoz)
+          this.inputGain = this.audioCtx.createGain();
+          this.inputGain.gain.setValueAtTime(2.5, this.audioCtx.currentTime);
+
+          // 2. Felüláteresztő szűrő (65 Hz alatt vágja a mély dübörgést)
           this.hpFilter = this.audioCtx.createBiquadFilter();
           this.hpFilter.type = 'highpass';
-          this.hpFilter.frequency.setValueAtTime(70, this.audioCtx.currentTime);
+          this.hpFilter.frequency.setValueAtTime(65, this.audioCtx.currentTime);
 
+          // 3. Aluláteresztő szűrő (3000 Hz-ig átengedi a pengetési tranzienseket)
           this.lpFilter = this.audioCtx.createBiquadFilter();
           this.lpFilter.type = 'lowpass';
-          this.lpFilter.frequency.setValueAtTime(2200, this.audioCtx.currentTime);
+          this.lpFilter.frequency.setValueAtTime(3000, this.audioCtx.currentTime);
 
           this.analyser = this.audioCtx.createAnalyser();
           this.analyser.fftSize = 512;
           this.dataArray = new Float32Array(this.analyser.fftSize);
 
-          this.source.connect(this.hpFilter);
+          // Lánc összekötése
+          this.source.connect(this.inputGain);
+          this.inputGain.connect(this.hpFilter);
           this.hpFilter.connect(this.lpFilter);
           this.lpFilter.connect(this.analyser);
 
           this.isActive = true;
           this.totalStrums = 0;
           this.perfectStrums = 0;
-          this.prevRms = 0;
+          this.detectorState = 'ready';
           this.detectLoop();
           return true;
         } catch (err) {
@@ -1037,17 +1075,25 @@
         }
         const rms = Math.sqrt(sum / this.dataArray.length);
 
-        if (this.onLevelUpdate) this.onLevelUpdate(Math.min(1.0, rms * 6.5));
+        if (this.onLevelUpdate) {
+          this.onLevelUpdate(Math.min(1.0, rms * 14.0));
+        }
 
         const now = this.audioCtx.currentTime;
-        const delta = rms - this.prevRms;
-        this.prevRms = rms * 0.7 + this.prevRms * 0.3;
 
-        const isAttackOnset = (delta > this.threshold * 0.45) && (rms > this.threshold);
-
-        if (isAttackOnset && (now - this.lastStrumTime) > this.debounceTime) {
-          this.lastStrumTime = now;
-          this.evaluateStrum(now);
+        // HISZTERÉZIS / SCHMITT-TRIGGER LOGIKA:
+        if (this.detectorState === 'ready') {
+          // Ha elérte a küszöböt: pengetés!
+          if (rms >= this.threshold && (now - this.lastStrumTime) > this.debounceTime) {
+            this.lastStrumTime = now;
+            this.detectorState = 'holding';
+            this.evaluateStrum(now);
+          }
+        } else if (this.detectorState === 'holding') {
+          // Csak akkor térhet vissza 'ready' állapotba, ha a húr lecsengett a küszöb 65%-ára
+          if ((now - this.lastStrumTime) > this.debounceTime && rms < (this.threshold * 0.65)) {
+            this.detectorState = 'ready';
+          }
         }
 
         requestAnimationFrame(() => this.detectLoop());
@@ -1069,7 +1115,8 @@
           }
         }
 
-        if (closestBeat && Math.abs(minDiffMs) <= 190) {
+        // 240 ms-os értékelési ablak
+        if (closestBeat && Math.abs(minDiffMs) <= 240) {
           if (closestBeat.evaluated) return;
           closestBeat.evaluated = true;
 
@@ -1215,6 +1262,7 @@
       if (!detector) {
         detector = new GuitarDetector(metronome.audioCtx, metronome);
         detector.latencyOffsetMs = parseInt(latencySlider.value, 10);
+        applySensitivity(parseInt(sensitivitySlider.value, 10));
 
         detector.onLevelUpdate = (level) => {
           const pct = Math.round(level * 100);
@@ -1258,13 +1306,20 @@
       if (detector) detector.latencyOffsetMs = val;
     });
 
-    sensitivitySlider.addEventListener('input', (e) => {
-      const val = parseInt(e.target.value, 10);
+    function applySensitivity(val) {
       let label = 'Közepes';
       if (val < 35) label = 'Alacsony';
       else if (val > 70) label = 'Magas';
       sensLabel.textContent = label;
-      if (detector) detector.threshold = 0.14 - ((val / 100) * 0.125);
+
+      // Valós gitár-RMS tartomány (0.005 - 0.05)
+      if (detector) {
+        detector.threshold = 0.05 - ((val / 100) * 0.045);
+      }
+    }
+
+    sensitivitySlider.addEventListener('input', (e) => {
+      applySensitivity(parseInt(e.target.value, 10));
     });
 
     document.querySelectorAll('#timerPresetsContainer .toggle-btn').forEach(btn => {
