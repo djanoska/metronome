@@ -80,7 +80,6 @@
       cursor: text;
     }
 
-    /* Input nyíl elrejtése */
     .bpm-input::-webkit-outer-spin-button,
     .bpm-input::-webkit-inner-spin-button {
       -webkit-appearance: none;
@@ -355,22 +354,72 @@
       constructor() {
         this.audioCtx = null;
         this.masterGain = null;
-        this.compressor = null;
         this.isPlaying = false;
         this.bpm = 120;
         this.beatsPerBar = 4;
         this.subdivision = 1; 
-        this.strumPattern = 'alternate'; // 'alternate' vagy 'down'
+        this.strumPattern = 'alternate';
         this.volume = 0.8;
 
-        this.lookahead = 25.0; // Schedulási frekvencia (ms)
-        this.scheduleAheadTime = 0.1; // Mennyivel előre ütemezünk (másodperc)
+        // Időzítési változók
+        this.scheduleAheadTime = 0.12; // Mennyivel ütemezünk előre az AudioContext órájában (másodperc)
         this.nextNoteTime = 0.0;
         this.currentStep = 0;
-        this.timerID = null;
+
+        // Előre generált hangminták (Zero Garbage Collection)
+        this.bufferFirst = null;
+        this.bufferBeat = null;
+        this.bufferSub = null;
 
         this.notesInQueue = [];
         this.onTick = null;
+
+        // Web Worker inicializálása memóriából (nem alszik el háttérbe tett fül esetén sem)
+        this.initWorker();
+      }
+
+      initWorker() {
+        const workerCode = `
+          let timer = null;
+          self.onmessage = function(e) {
+            if (e.data === 'start') {
+              if (!timer) {
+                timer = setInterval(() => self.postMessage('tick'), 25);
+              }
+            } else if (e.data === 'stop') {
+              if (timer) {
+                clearInterval(timer);
+                timer = null;
+              }
+            }
+          };
+        `;
+        const blob = new Blob([workerCode], { type: 'application/javascript' });
+        this.timerWorker = new Worker(URL.createObjectURL(blob));
+        this.timerWorker.onmessage = (e) => {
+          if (e.data === 'tick') {
+            this.scheduler();
+          }
+        };
+      }
+
+      // Perkusszív, akusztikus fa-klikk minták szintetizálása egyetlen alkalommal a memóriába
+      createClickBuffer(freqStart, freqEnd, duration, decayRate, gainFactor = 1.0) {
+        const sampleRate = this.audioCtx.sampleRate;
+        const frameCount = Math.floor(sampleRate * duration);
+        const buffer = this.audioCtx.createBuffer(1, frameCount, sampleRate);
+        const data = buffer.getChannelData(0);
+        let phase = 0;
+
+        for (let i = 0; i < frameCount; i++) {
+          const t = i / sampleRate;
+          const env = Math.exp(-t * decayRate);
+          const currentFreq = freqEnd + (freqStart - freqEnd) * Math.exp(-t * 90);
+          phase += (2 * Math.PI * currentFreq) / sampleRate;
+          const noise = (Math.random() * 2 - 1) * Math.exp(-t * 150); // Tranzienst biztosító mikrozaj
+          data[i] = (Math.sin(phase) * 0.85 + noise * 0.15) * env * gainFactor;
+        }
+        return buffer;
       }
 
       initAudio() {
@@ -378,20 +427,14 @@
           const AudioContextClass = window.AudioContext || window.webkitAudioContext;
           this.audioCtx = new AudioContextClass();
 
-          // Kompresszor az átütő, telt hangzásért (elkerüli a torzítást nagy hangerőnél)
-          this.compressor = this.audioCtx.createDynamicsCompressor();
-          this.compressor.threshold.setValueAtTime(-12, this.audioCtx.currentTime);
-          this.compressor.knee.setValueAtTime(30, this.audioCtx.currentTime);
-          this.compressor.ratio.setValueAtTime(12, this.audioCtx.currentTime);
-          this.compressor.attack.setValueAtTime(0.003, this.audioCtx.currentTime);
-          this.compressor.release.setValueAtTime(0.1, this.audioCtx.currentTime);
-
-          // Fő hangerőszabályzó node
           this.masterGain = this.audioCtx.createGain();
           this.masterGain.gain.setValueAtTime(this.volume, this.audioCtx.currentTime);
-
-          this.compressor.connect(this.masterGain);
           this.masterGain.connect(this.audioCtx.destination);
+
+          // 3 különböző frekvenciájú, éles fa-klikk előállítása induláskor
+          this.bufferFirst = this.createClickBuffer(1700, 800, 0.045, 95, 1.0);  // 1. hangsúlyos ütés
+          this.bufferBeat  = this.createClickBuffer(1200, 550, 0.035, 110, 0.75); // Normál negyed
+          this.bufferSub   = this.createClickBuffer(800, 400, 0.025, 140, 0.4);   // Szubdivíziós aprózás
         }
         if (this.audioCtx.state === 'suspended') {
           this.audioCtx.resume();
@@ -403,6 +446,21 @@
         if (this.masterGain && this.audioCtx) {
           this.masterGain.gain.setValueAtTime(this.volume, this.audioCtx.currentTime);
         }
+      }
+
+      // Fázis-megőrző dinamikus BPM állítás: játék közben sincs ugrás vagy dadogás
+      setBpm(newBpm) {
+        const clamped = Math.max(1, Math.min(240, Math.round(newBpm)));
+        if (clamped === this.bpm) return;
+
+        if (this.isPlaying && this.audioCtx) {
+          const now = this.audioCtx.currentTime;
+          const remaining = this.nextNoteTime - now;
+          if (remaining > 0) {
+            this.nextNoteTime = now + remaining * (this.bpm / clamped);
+          }
+        }
+        this.bpm = clamped;
       }
 
       nextNote() {
@@ -421,46 +479,29 @@
       scheduleNote(stepNumber, time) {
         this.notesInQueue.push({ step: stepNumber, time: time });
 
-        const osc = this.audioCtx.createOscillator();
-        const gain = this.audioCtx.createGain();
-
-        osc.connect(gain);
-        gain.connect(this.compressor);
-
+        // Könnyű, azonnal induló buffer forrás (nem hoz létre új szűrőket vagy oszcillátort)
+        const source = this.audioCtx.createBufferSource();
         const isBeat = (stepNumber % this.subdivision === 0);
         const isFirstBeat = (stepNumber === 0);
 
-        // Átütő perkusszív hangképzés: pitch sweep (gyors frekvenciazuhanás 25-30ms alatt)
         if (isFirstBeat) {
-          // Első ütés: magas, éles fa-klikk
-          osc.frequency.setValueAtTime(1800, time);
-          osc.frequency.exponentialRampToValueAtTime(400, time + 0.03);
-          gain.gain.setValueAtTime(1.0, time);
+          source.buffer = this.bufferFirst;
         } else if (isBeat) {
-          // Normál negyedütés: közép-magas klikk
-          osc.frequency.setValueAtTime(1200, time);
-          osc.frequency.exponentialRampToValueAtTime(300, time + 0.025);
-          gain.gain.setValueAtTime(0.8, time);
+          source.buffer = this.bufferBeat;
         } else {
-          // Szubdivíziós aprózás: tompább tikkelés
-          osc.frequency.setValueAtTime(750, time);
-          osc.frequency.exponentialRampToValueAtTime(250, time + 0.02);
-          gain.gain.setValueAtTime(0.4, time);
+          source.buffer = this.bufferSub;
         }
 
-        // Tiszta, kattanásmentes lecsengés
-        gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.035);
-
-        osc.start(time);
-        osc.stop(time + 0.04);
+        source.connect(this.masterGain);
+        source.start(time);
       }
 
       scheduler() {
+        if (!this.isPlaying) return;
         while (this.nextNoteTime < this.audioCtx.currentTime + this.scheduleAheadTime) {
           this.scheduleNote(this.currentStep, this.nextNoteTime);
           this.nextNote();
         }
-        this.timerID = setTimeout(() => this.scheduler(), this.lookahead);
       }
 
       start() {
@@ -470,13 +511,13 @@
         this.currentStep = 0;
         this.nextNoteTime = this.audioCtx.currentTime + 0.05;
         this.notesInQueue = [];
-        this.scheduler();
+        this.timerWorker.postMessage('start');
       }
 
       stop() {
         if (!this.isPlaying) return;
         this.isPlaying = false;
-        clearTimeout(this.timerID);
+        this.timerWorker.postMessage('stop');
         this.notesInQueue = [];
       }
 
@@ -507,18 +548,15 @@
     const indicatorsContainer = document.getElementById('indicators');
 
     function updateBpm(newBpm) {
-      const clamped = Math.max(1, Math.min(240, Math.round(newBpm)));
-      metronome.bpm = clamped;
-      bpmSlider.value = clamped;
-      bpmInput.value = clamped;
+      metronome.setBpm(newBpm);
+      bpmSlider.value = metronome.bpm;
+      bpmInput.value = metronome.bpm;
     }
 
-    // BPM csúszka & léptetők
     bpmSlider.addEventListener('input', (e) => updateBpm(parseInt(e.target.value, 10)));
     bpmMinus.addEventListener('click', () => updateBpm(metronome.bpm - 1));
     bpmPlus.addEventListener('click', () => updateBpm(metronome.bpm + 1));
 
-    // Számszerű BPM mező (Enterre és fókuszvesztésre rögzít)
     bpmInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         updateBpm(parseInt(bpmInput.value, 10) || 120);
@@ -529,14 +567,12 @@
       updateBpm(parseInt(bpmInput.value, 10) || 120);
     });
 
-    // Hangerő csúszka
     volumeSlider.addEventListener('input', (e) => {
       const val = parseInt(e.target.value, 10);
       volumeLabel.textContent = val + '%';
       metronome.setVolume(val / 100);
     });
 
-    // Vizuális elemek & pengetési nyilak generálása
     function renderIndicators() {
       indicatorsContainer.innerHTML = '';
       const totalSteps = metronome.beatsPerBar * metronome.subdivision;
@@ -554,12 +590,9 @@
         const arrow = document.createElement('div');
         arrow.className = 'strum-arrow';
 
-        // Pengetés logika
         if (metronome.strumPattern === 'alternate') {
-          // Páros lépések: Le (↓), Páratlan lépések: Fel (↑)
           arrow.textContent = (i % 2 === 0) ? '↓' : '↑';
         } else {
-          // Csak le (↓)
           arrow.textContent = '↓';
         }
 
@@ -569,7 +602,6 @@
       }
     }
 
-    // Ütemmutató választó
     document.querySelectorAll('#beatsContainer .toggle-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#beatsContainer .toggle-btn').forEach(b => b.classList.remove('active'));
@@ -580,7 +612,6 @@
       });
     });
 
-    // Szubdivízió választó
     document.querySelectorAll('#subdivContainer .toggle-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#subdivContainer .toggle-btn').forEach(b => b.classList.remove('active'));
@@ -591,7 +622,6 @@
       });
     });
 
-    // Pengetési irány választó
     document.querySelectorAll('#strumContainer .toggle-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#strumContainer .toggle-btn').forEach(b => b.classList.remove('active'));
@@ -601,7 +631,6 @@
       });
     });
 
-    // Indítás / Leállítás
     playBtn.addEventListener('click', () => {
       if (!metronome.isPlaying) {
         metronome.start();
@@ -615,7 +644,7 @@
       }
     });
 
-    // Tap Tempo
+    // Tap Tempo kalkuláció
     let tapTimes = [];
     tapBtn.addEventListener('click', () => {
       const now = performance.now();
