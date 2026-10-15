@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>PolyBeat - Web Audio Metronóm</title>
   <style>
     :root {
@@ -15,13 +15,11 @@
       --text: #c9d1d9;
       --text-bright: #ffffff;
 
-      /* Pengetési színek */
-      --strum-down: #ff3b56;       /* Élénkpiros */
+      --strum-down: #ff3b56;
       --strum-down-dim: rgba(255, 59, 86, 0.4);
-      --strum-up: #00d2ee;         /* Elektromos cián */
+      --strum-up: #00d2ee;
       --strum-up-dim: rgba(0, 210, 238, 0.4);
 
-      /* Gyakorló módok és visszajelzés */
       --mode-active: #bc8cff;
       --mode-active-border: #d2a8ff;
       --gold: #f1e05a;
@@ -42,6 +40,17 @@
       padding: 1.5rem 1rem;
     }
 
+    #errorBanner {
+      display: none;
+      background: #da3633;
+      color: #fff;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      margin-bottom: 1rem;
+      word-break: break-all;
+    }
+
     .metronome-card {
       background: var(--card-bg);
       border: 1px solid var(--border);
@@ -55,10 +64,7 @@
       gap: 1.15rem;
     }
 
-    .tempo-display {
-      text-align: center;
-      position: relative;
-    }
+    .tempo-display { text-align: center; }
 
     .bpm-input-wrapper {
       display: inline-flex;
@@ -80,28 +86,11 @@
       line-height: 1;
       font-variant-numeric: tabular-nums;
       cursor: pointer;
-      transition: border-color 0.2s, background-color 0.2s;
-    }
-
-    .bpm-input:hover {
-      border-color: var(--border);
-      background: rgba(255, 255, 255, 0.03);
-    }
-
-    .bpm-input:focus {
-      border-color: var(--accent);
-      background: #0d1117;
-      cursor: text;
     }
 
     .bpm-input::-webkit-outer-spin-button,
-    .bpm-input::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    .bpm-input[type=number] {
-      -moz-appearance: textfield;
-    }
+    .bpm-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .bpm-input[type=number] { -moz-appearance: textfield; }
 
     .bpm-label {
       font-size: 0.8rem;
@@ -135,10 +124,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.15s;
     }
-
-    .step-btn:hover { background: #30363d; }
 
     .control-group {
       display: flex;
@@ -156,23 +142,9 @@
       color: #8b949e;
     }
 
-    .button-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0.45rem;
-    }
-
-    .button-grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.45rem;
-    }
-
-    .button-grid-3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.45rem;
-    }
+    .button-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.45rem; }
+    .button-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; }
+    .button-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
 
     .toggle-btn {
       background: #21262d;
@@ -183,8 +155,8 @@
       cursor: pointer;
       font-size: 0.82rem;
       font-weight: 500;
-      transition: all 0.2s;
       text-align: center;
+      transition: all 0.15s;
     }
 
     .toggle-btn.active {
@@ -197,24 +169,16 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       gap: 0.15rem;
       padding: 0.55rem 0.2rem;
     }
-
-    .practice-btn .sub-label {
-      font-size: 0.65rem;
-      opacity: 0.7;
-    }
-
+    .practice-btn .sub-label { font-size: 0.65rem; opacity: 0.7; }
     .practice-btn.active {
       background: #3b2361;
       border-color: var(--mode-active-border);
       color: #f0f6fc;
-      box-shadow: 0 0 10px rgba(188, 140, 255, 0.2);
     }
 
-    /* Auto BPM Létra doboz */
     .ladder-panel {
       background: var(--panel-bg);
       border: 1px solid var(--border);
@@ -223,18 +187,21 @@
       display: flex;
       flex-direction: column;
       gap: 0.6rem;
+      overflow: hidden;
     }
 
     .ladder-row {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 0.5rem;
+      width: 100%;
     }
 
     .ladder-field {
       display: flex;
       flex-direction: column;
       gap: 0.2rem;
+      min-width: 0;
     }
 
     .ladder-field label {
@@ -244,32 +211,19 @@
     }
 
     .ladder-field input {
+      width: 100%;
+      box-sizing: border-box;
       background: #21262d;
       border: 1px solid var(--border);
       border-radius: 6px;
       color: #fff;
-      padding: 0.35rem 0.45rem;
+      padding: 0.35rem 0.2rem;
       font-size: 0.85rem;
       text-align: center;
       outline: none;
     }
 
-    .ladder-field input:focus { border-color: var(--accent); }
-
-    .ladder-toggle-row {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .ladder-toggle-row .toggle-btn { flex: 1; }
-
-    /* Silent & Hangerő sor */
-    .vol-silent-row {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-    }
-
+    .vol-silent-row { display: flex; align-items: center; gap: 0.75rem; }
     .silent-btn {
       background: #21262d;
       border: 1px solid var(--border);
@@ -280,16 +234,9 @@
       font-size: 0.75rem;
       font-weight: 600;
       white-space: nowrap;
-      transition: all 0.2s;
     }
+    .silent-btn.active { background: #da3633; border-color: #f85149; color: #fff; }
 
-    .silent-btn.active {
-      background: #da3633;
-      border-color: #f85149;
-      color: #fff;
-    }
-
-    /* Vizuális visszajelző sáv */
     .beat-indicators {
       display: flex;
       gap: 0.6rem;
@@ -308,7 +255,6 @@
       flex-direction: column;
       align-items: center;
       gap: 0.45rem;
-      transition: opacity 0.3s ease, transform 0.08s ease;
     }
 
     .beat-dot.main-beat {
@@ -317,8 +263,6 @@
       border-radius: 50%;
       background: #ffffff;
       border: 2px solid #ffffff;
-      box-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
-      transition: transform 0.08s, background-color 0.08s, border-color 0.08s, box-shadow 0.08s;
     }
 
     .beat-dot.sub {
@@ -327,52 +271,41 @@
       border-radius: 50%;
       background: transparent;
       border: 2px solid rgba(255, 255, 255, 0.75);
-      transition: transform 0.08s, background-color 0.08s, border-color 0.08s, box-shadow 0.08s;
     }
 
     .strum-arrow {
       font-size: 1.25rem;
       font-weight: 900;
       line-height: 1;
-      transition: transform 0.08s ease, color 0.08s ease, filter 0.08s ease;
       user-select: none;
     }
 
     .strum-down .strum-arrow { color: var(--strum-down-dim); }
     .strum-up .strum-arrow { color: var(--strum-up-dim); }
 
-    .beat-col.active {
-      transform: scale(1.15);
-    }
-
+    .beat-col.active { transform: scale(1.15); }
     .beat-col.active.strum-down .beat-dot {
       background: var(--strum-down) !important;
       border-color: var(--strum-down) !important;
-      box-shadow: 0 0 14px var(--strum-down) !important;
+      box-shadow: 0 0 14px var(--strum-down);
     }
     .beat-col.active.strum-down .strum-arrow {
       color: var(--strum-down);
       filter: drop-shadow(0 0 8px var(--strum-down));
-      transform: scale(1.3);
     }
 
     .beat-col.active.strum-up .beat-dot {
       background: var(--strum-up) !important;
       border-color: var(--strum-up) !important;
-      box-shadow: 0 0 14px var(--strum-up) !important;
+      box-shadow: 0 0 14px var(--strum-up);
     }
     .beat-col.active.strum-up .strum-arrow {
       color: var(--strum-up);
       filter: drop-shadow(0 0 8px var(--strum-up));
-      transform: scale(1.3);
     }
 
-    .training-wheels-off .beat-col.is-subdivision {
-      opacity: 0.12;
-    }
-    .training-wheels-off .beat-col.is-subdivision .strum-arrow {
-      visibility: hidden;
-    }
+    .training-wheels-off .beat-col.is-subdivision { opacity: 0.12; }
+    .training-wheels-off .beat-col.is-subdivision .strum-arrow { visibility: hidden; }
 
     .action-row {
       display: grid;
@@ -390,12 +323,8 @@
       padding: 0.85rem;
       border-radius: 8px;
       cursor: pointer;
-      transition: background 0.2s;
     }
-
-    .primary-btn:hover { background: #2ea043; }
     .primary-btn.playing { background: #da3633; }
-    .primary-btn.playing:hover { background: #f85149; }
 
     .tap-btn {
       background: #21262d;
@@ -406,11 +335,7 @@
       cursor: pointer;
     }
 
-    .tap-btn:active { background: #30363d; }
-
-    /* ========================================================
-       KÜLÖNÁLLÓ BLOKK: GITÁR ÉRZÉKELŐ ÉS PONTOSSÁGMÉRŐ (BETA)
-       ======================================================== */
+    /* Alsó gitáros blokk (BETA) */
     .guitar-bottom-card {
       margin-top: 0.5rem;
       background: linear-gradient(180deg, #131b26 0%, #0d131a 100%);
@@ -420,7 +345,6 @@
       display: flex;
       flex-direction: column;
       gap: 0.85rem;
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
     .guitar-header-row {
@@ -448,8 +372,6 @@
       background: rgba(241, 224, 90, 0.15);
       color: var(--gold);
       border: 1px solid rgba(241, 224, 90, 0.4);
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
     }
 
     .accuracy-badge {
@@ -459,28 +381,10 @@
       border-radius: 6px;
       background: #21262d;
       color: #8b949e;
-      transition: all 0.15s ease;
-      letter-spacing: 0.05em;
     }
-
-    .accuracy-badge.perfect {
-      background: rgba(46, 160, 67, 0.25);
-      color: var(--accuracy-perfect);
-      border: 1px solid var(--accuracy-perfect);
-      box-shadow: 0 0 10px rgba(46, 160, 67, 0.3);
-    }
-    .accuracy-badge.early {
-      background: rgba(241, 224, 90, 0.25);
-      color: var(--accuracy-early);
-      border: 1px solid var(--accuracy-early);
-      box-shadow: 0 0 10px rgba(241, 224, 90, 0.2);
-    }
-    .accuracy-badge.late {
-      background: rgba(255, 123, 114, 0.25);
-      color: var(--accuracy-late);
-      border: 1px solid var(--accuracy-late);
-      box-shadow: 0 0 10px rgba(255, 123, 114, 0.2);
-    }
+    .accuracy-badge.perfect { background: rgba(46, 160, 67, 0.25); color: var(--accuracy-perfect); border: 1px solid var(--accuracy-perfect); }
+    .accuracy-badge.early { background: rgba(241, 224, 90, 0.25); color: var(--accuracy-early); border: 1px solid var(--accuracy-early); }
+    .accuracy-badge.late { background: rgba(255, 123, 114, 0.25); color: var(--accuracy-late); border: 1px solid var(--accuracy-late); }
 
     .guitar-controls-row {
       display: flex;
@@ -498,44 +402,13 @@
       font-size: 0.82rem;
       font-weight: 700;
       white-space: nowrap;
-      transition: all 0.2s;
     }
+    .mic-main-btn.active { background: #1f6feb; border-color: #58a6ff; }
 
-    .mic-main-btn.active {
-      background: #1f6feb;
-      border-color: #58a6ff;
-      box-shadow: 0 0 12px rgba(31, 111, 235, 0.4);
-    }
-
-    .meter-container {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .meter-label-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.68rem;
-      color: #8b949e;
-      text-transform: uppercase;
-    }
-
-    .level-meter-wrapper {
-      height: 9px;
-      background: #0d1117;
-      border-radius: 5px;
-      overflow: hidden;
-      border: 1px solid #30363d;
-    }
-
-    .level-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #58a6ff 0%, #00d2ee 80%, #ff3b56 100%);
-      transition: width 0.04s linear;
-    }
+    .meter-container { flex: 1; display: flex; flex-direction: column; gap: 0.25rem; }
+    .meter-label-row { display: flex; justify-content: space-between; font-size: 0.68rem; color: #8b949e; text-transform: uppercase; }
+    .level-meter-wrapper { height: 9px; background: #0d1117; border-radius: 5px; overflow: hidden; border: 1px solid #30363d; }
+    .level-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #58a6ff 0%, #00d2ee 80%, #ff3b56 100%); transition: width 0.04s linear; }
 
     .calib-grid {
       display: grid;
@@ -546,25 +419,8 @@
       border-radius: 8px;
       border: 1px solid rgba(255, 255, 255, 0.05);
     }
-
-    .calib-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .calib-item-header {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.68rem;
-      color: #8b949e;
-      text-transform: uppercase;
-    }
-
-    .calib-item input[type=range] {
-      accent-color: #58a6ff;
-      height: 5px;
-    }
+    .calib-item { display: flex; flex-direction: column; gap: 0.25rem; }
+    .calib-item-header { display: flex; justify-content: space-between; font-size: 0.68rem; color: #8b949e; text-transform: uppercase; }
 
     .guitar-stats-row {
       display: flex;
@@ -573,23 +429,20 @@
       font-size: 0.75rem;
       font-weight: 600;
       color: #8b949e;
-      padding-top: 0.1rem;
     }
-
-    .guitar-stats-row .highlight {
-      color: #ffffff;
-      font-variant-numeric: tabular-nums;
-    }
+    .guitar-stats-row .highlight { color: #ffffff; }
   </style>
 </head>
 <body>
 
   <main class="metronome-card">
+    <div id="errorBanner"></div>
+
     <div class="tempo-display">
       <div class="bpm-input-wrapper">
-        <input type="number" id="bpmInput" class="bpm-input" min="1" max="240" value="120" title="Kattints a szerkesztéshez, majd nyomj Entert">
+        <input type="number" id="bpmInput" class="bpm-input" min="1" max="240" value="120">
       </div>
-      <div class="bpm-label" id="bpmSubText">BPM (1 – 240) • Nyomj Enter-t a módosításhoz</div>
+      <div class="bpm-label" id="bpmSubText">BPM (1 – 240) • Nyomj Enter-t</div>
     </div>
 
     <div class="slider-row">
@@ -601,12 +454,12 @@
     <!-- Hangerő & Néma mód -->
     <div class="control-group">
       <div class="group-header">
-        <span>Hangerő & Csendes mód</span>
+        <span>Hangerő</span>
         <span id="volumeLabel">80%</span>
       </div>
       <div class="vol-silent-row">
         <input type="range" id="volumeSlider" min="0" max="100" value="80">
-        <button class="silent-btn" id="silentToggleBtn">🔇 Néma mód: KI</button>
+        <button class="silent-btn" id="silentToggleBtn">🔇 Néma: KI</button>
       </div>
     </div>
 
@@ -654,46 +507,46 @@
       <div class="button-grid-3">
         <button class="toggle-btn practice-btn" id="btnTrainingWheels">
           <span>Training Wheel</span>
-          <span class="sub-label">30 mp után önálló</span>
+          <span class="sub-label">30 mp önálló</span>
         </button>
         <button class="toggle-btn practice-btn" id="btnGapClick">
           <span>Gap Click</span>
-          <span class="sub-label">3 ütem : 1 csend</span>
+          <span class="sub-label">3:1 csend</span>
         </button>
         <button class="toggle-btn practice-btn" id="btnRandomDrop">
           <span>Random Drop</span>
-          <span class="sub-label">Véletlen kihagyás</span>
+          <span class="sub-label">Kihagyás</span>
         </button>
       </div>
     </div>
 
-    <!-- Auto BPM Létra & Piramis doboz -->
+    <!-- Auto BPM Létra & Piramis -->
     <div class="ladder-panel">
       <div class="group-header">
-        <span>Auto BPM Létra & Piramis</span>
+        <span>Auto BPM Létra</span>
         <span id="ladderStatusText" style="color: var(--gold); font-weight: 600;"></span>
       </div>
       <div class="ladder-row">
         <div class="ladder-field">
-          <label>Start BPM</label>
-          <input type="number" id="ladderStartBpm" min="20" max="240" value="80">
+          <label>Start</label>
+          <input type="number" id="ladderStartBpm" value="80">
         </div>
         <div class="ladder-field">
-          <label>Cél BPM</label>
-          <input type="number" id="ladderTargetBpm" min="20" max="240" value="130">
+          <label>Cél</label>
+          <input type="number" id="ladderTargetBpm" value="130">
         </div>
         <div class="ladder-field">
-          <label>Lépésköz (+/-)</label>
-          <input type="number" id="ladderStep" min="1" max="20" value="5">
+          <label>Lépés</label>
+          <input type="number" id="ladderStep" value="5">
         </div>
       </div>
-      <div class="ladder-toggle-row">
-        <button class="toggle-btn" id="btnLadderToggle">Létra: KI</button>
-        <button class="toggle-btn" id="btnPyramidToggle">Piramis mód: KI</button>
+      <div class="slider-row" style="margin-top: 0.2rem;">
+        <button class="toggle-btn" id="btnLadderToggle" style="flex:1;">Létra: KI</button>
+        <button class="toggle-btn" id="btnPyramidToggle" style="flex:1;">Piramis: KI</button>
       </div>
     </div>
 
-    <!-- Session Timer (5 - 10 - 15 perc) -->
+    <!-- Session Timer -->
     <div class="control-group">
       <div class="group-header">
         <span>Session Timer</span>
@@ -715,9 +568,7 @@
       <button class="tap-btn" id="tapBtn">TAP</button>
     </div>
 
-    <!-- ========================================================
-         KÜLÖNÁLLÓ BLOKK: GITÁR ÉRZÉKELŐ ÉS PONTOSSÁGMÉRŐ (BETA)
-         ======================================================== -->
+    <!-- Alsó gitáros blokk (BETA) -->
     <section class="guitar-bottom-card">
       <div class="guitar-header-row">
         <div class="guitar-title">
@@ -731,7 +582,7 @@
         <button class="mic-main-btn" id="micToggleBtn">🎙️ Érzékelő: KI</button>
         <div class="meter-container">
           <div class="meter-label-row">
-            <span>Bemeneti jelszint</span>
+            <span>Bemeneti szint</span>
             <span id="levelValue">0%</span>
           </div>
           <div class="level-meter-wrapper">
@@ -740,16 +591,14 @@
         </div>
       </div>
 
-      <!-- Késleltetés kalibráció & Érzékenység csúszkák -->
       <div class="calib-grid">
         <div class="calib-item">
           <div class="calib-item-header">
-            <span>Késleltetés (Offset)</span>
+            <span>Offset</span>
             <span id="offsetLabel" style="color: #58a6ff; font-weight:700;">−60 ms</span>
           </div>
           <input type="range" id="latencySlider" min="-150" max="100" value="-60" step="5">
         </div>
-
         <div class="calib-item">
           <div class="calib-item-header">
             <span>Érzékenység</span>
@@ -767,6 +616,15 @@
   </main>
 
   <script>
+    window.onerror = function(msg, url, line) {
+      const banner = document.getElementById('errorBanner');
+      if (banner) {
+        banner.style.display = 'block';
+        banner.textContent = 'Hiba lépett fel: ' + msg + ' (Sor: ' + line + ')';
+      }
+      return false;
+    };
+
     class MetronomeEngine {
       constructor() {
         this.audioCtx = null;
@@ -774,17 +632,15 @@
         this.isPlaying = false;
         this.bpm = 120;
         this.beatsPerBar = 4;
-        this.subdivision = 1; 
+        this.subdivision = 1;
         this.strumPattern = 'alternate';
         this.volume = 0.8;
         this.isSilent = false;
 
-        // Gyakorló módok
         this.trainingWheels = false;
         this.gapClick = false;
         this.randomDrop = false;
 
-        // Létra & Piramis
         this.ladderEnabled = false;
         this.pyramidEnabled = false;
         this.ladderStart = 80;
@@ -794,7 +650,6 @@
         this.ladderDirection = 1;
         this.ladderBarCounter = 0;
 
-        // Session Timer
         this.timerMinutes = 0;
         this.timerRemainingMs = 0;
         this.lastTimerTick = 0;
@@ -822,24 +677,45 @@
       }
 
       initWorker() {
-        const workerCode = `
-          let timer = null;
-          self.onmessage = function(e) {
-            if (e.data === 'start') {
-              if (!timer) timer = setInterval(() => self.postMessage('tick'), 25);
-            } else if (e.data === 'stop') {
-              if (timer) { clearInterval(timer); timer = null; }
+        try {
+          const workerCode = `
+            let timer = null;
+            self.onmessage = function(e) {
+              if (e.data === 'start') {
+                if (!timer) timer = setInterval(() => self.postMessage('tick'), 25);
+              } else if (e.data === 'stop') {
+                if (timer) { clearInterval(timer); timer = null; }
+              }
+            };
+          `;
+          const blob = new Blob([workerCode], { type: 'application/javascript' });
+          this.timerWorker = new Worker(URL.createObjectURL(blob));
+          this.timerWorker.onmessage = (e) => {
+            if (e.data === 'tick') {
+              this.scheduler();
+              this.checkSessionTimer();
             }
           };
-        `;
-        const blob = new Blob([workerCode], { type: 'application/javascript' });
-        this.timerWorker = new Worker(URL.createObjectURL(blob));
-        this.timerWorker.onmessage = (e) => {
-          if (e.data === 'tick') {
-            this.scheduler();
-            this.checkSessionTimer();
-          }
-        };
+        } catch (err) {
+          this.fallbackTimer = null;
+          this.timerWorker = {
+            postMessage: (msg) => {
+              if (msg === 'start') {
+                if (!this.fallbackTimer) {
+                  this.fallbackTimer = setInterval(() => {
+                    this.scheduler();
+                    this.checkSessionTimer();
+                  }, 25);
+                }
+              } else if (msg === 'stop') {
+                if (this.fallbackTimer) {
+                  clearInterval(this.fallbackTimer);
+                  this.fallbackTimer = null;
+                }
+              }
+            }
+          };
+        }
       }
 
       createClickBuffer(freqStart, freqEnd, duration, decayRate, gainFactor = 1.0) {
@@ -862,16 +738,15 @@
 
       createChimeBuffer() {
         const sampleRate = this.audioCtx.sampleRate;
-        const duration = 1.2;
+        const duration = 1.0;
         const frameCount = Math.floor(sampleRate * duration);
         const buffer = this.audioCtx.createBuffer(1, frameCount, sampleRate);
         const data = buffer.getChannelData(0);
 
         for (let i = 0; i < frameCount; i++) {
           const t = i / sampleRate;
-          const env = Math.exp(-t * 3.5);
-          const tone = Math.sin(2 * Math.PI * 1046.5 * t) * 0.5 + Math.sin(2 * Math.PI * 1318.5 * t) * 0.5;
-          data[i] = tone * env * 0.8;
+          const env = Math.exp(-t * 4.0);
+          data[i] = (Math.sin(2 * Math.PI * 1046.5 * t) * 0.5 + Math.sin(2 * Math.PI * 1318.5 * t) * 0.5) * env * 0.7;
         }
         return buffer;
       }
@@ -923,23 +798,17 @@
         this.lastTimerTick = now;
 
         this.timerRemainingMs -= delta;
-        if (this.onTimerUpdate) {
-          this.onTimerUpdate(Math.max(0, this.timerRemainingMs));
-        }
+        if (this.onTimerUpdate) this.onTimerUpdate(Math.max(0, this.timerRemainingMs));
 
         if (this.timerRemainingMs <= 0) {
           this.stop();
-          this.playChime();
+          if (this.audioCtx && this.bufferChime) {
+            const chimeSource = this.audioCtx.createBufferSource();
+            chimeSource.buffer = this.bufferChime;
+            chimeSource.connect(this.masterGain);
+            chimeSource.start();
+          }
           if (this.onSessionComplete) this.onSessionComplete();
-        }
-      }
-
-      playChime() {
-        if (this.audioCtx && this.bufferChime) {
-          const chimeSource = this.audioCtx.createBufferSource();
-          chimeSource.buffer = this.bufferChime;
-          chimeSource.connect(this.masterGain);
-          chimeSource.start();
         }
       }
 
@@ -954,9 +823,7 @@
           if (this.ladderDirection > 0) {
             if (nextBpm >= this.ladderTarget) {
               nextBpm = this.ladderTarget;
-              if (this.pyramidEnabled) {
-                this.ladderDirection = -1;
-              }
+              if (this.pyramidEnabled) this.ladderDirection = -1;
             }
           } else {
             if (nextBpm <= this.ladderStart) {
@@ -967,9 +834,7 @@
 
           if (nextBpm !== this.bpm) {
             this.setBpm(nextBpm);
-            if (this.onBpmAutoChange) {
-              this.onBpmAutoChange(nextBpm, this.ladderDirection);
-            }
+            if (this.onBpmAutoChange) this.onBpmAutoChange(nextBpm, this.ladderDirection);
           }
         }
       }
@@ -1004,13 +869,7 @@
         }
 
         let shouldPlaySound = true;
-        if (this.isSilent) {
-          shouldPlaySound = false;
-        } else if (isGapMutedBar) {
-          shouldPlaySound = false;
-        } else if (wheelsAreOff && isSub) {
-          shouldPlaySound = false;
-        } else if (isRandomDropped) {
+        if (this.isSilent || isGapMutedBar || (wheelsAreOff && isSub) || isRandomDropped) {
           shouldPlaySound = false;
         }
 
@@ -1021,21 +880,14 @@
           wheelsOff: wheelsAreOff
         });
 
-        // Ütemezett hangok elmentése evaluated = false flaggel
         this.scheduledBeatsHistory.push({ time: time, step: stepNumber, evaluated: false });
-        if (this.scheduledBeatsHistory.length > 36) {
-          this.scheduledBeatsHistory.shift();
-        }
+        if (this.scheduledBeatsHistory.length > 36) this.scheduledBeatsHistory.shift();
 
         if (shouldPlaySound) {
           const source = this.audioCtx.createBufferSource();
-          if (isFirstBeat) {
-            source.buffer = this.bufferFirst;
-          } else if (isBeat) {
-            source.buffer = this.bufferBeat;
-          } else {
-            source.buffer = this.bufferSub;
-          }
+          if (isFirstBeat) source.buffer = this.bufferFirst;
+          else if (isBeat) source.buffer = this.bufferBeat;
+          else source.buffer = this.bufferSub;
 
           source.connect(this.masterGain);
           source.start(time);
@@ -1089,14 +941,11 @@
 
         while (this.notesInQueue.length > 0 && this.notesInQueue[0].time <= currentTime) {
           const currentNote = this.notesInQueue.shift();
-          if (this.onTick) {
-            this.onTick(currentNote);
-          }
+          if (this.onTick) this.onTick(currentNote);
         }
       }
     }
 
-    // --- FINOMÍTOTT TRANZIENS DETEKTOR ÉS ÜTEM-ZÁROLÓ MOTOR ---
     class GuitarDetector {
       constructor(audioCtx, metronomeEngine) {
         this.audioCtx = audioCtx;
@@ -1110,14 +959,12 @@
 
         this.dataArray = null;
         this.lastStrumTime = 0;
-        this.debounceTime = 0.16; // 160ms minimális szünet az új lecsapódásig
+        this.debounceTime = 0.16;
 
-        // Tranziens- és ugrásfigyelő állapot
         this.prevRms = 0;
         this.latencyOffsetMs = -60;
         this.threshold = 0.035;
 
-        // Statisztikák
         this.totalStrums = 0;
         this.perfectStrums = 0;
         this.onAccuracyResult = null;
@@ -1162,7 +1009,6 @@
           this.detectLoop();
           return true;
         } catch (err) {
-          console.error("Mikrofon hiba:", err);
           alert("Nem sikerült elérni a hangbemenetet!");
           return false;
         }
@@ -1171,7 +1017,7 @@
       stop() {
         this.isActive = false;
         if (this.stream) {
-          this.stream.getTracks().forEach(track => track.stop());
+          this.stream.getTracks().forEach(t => t.stop());
           this.stream = null;
         }
         if (this.source) {
@@ -1191,17 +1037,12 @@
         }
         const rms = Math.sqrt(sum / this.dataArray.length);
 
-        if (this.onLevelUpdate) {
-          this.onLevelUpdate(Math.min(1.0, rms * 6.5));
-        }
+        if (this.onLevelUpdate) this.onLevelUpdate(Math.min(1.0, rms * 6.5));
 
         const now = this.audioCtx.currentTime;
-
-        // Attack (meredekség) számítás: mekkorát ugrott a hangerő az előző mintához képest?
         const delta = rms - this.prevRms;
-        this.prevRms = rms * 0.7 + this.prevRms * 0.3; // finom exponenciális követés
+        this.prevRms = rms * 0.7 + this.prevRms * 0.3;
 
-        // Csak valódi új pengetés indít mérést (hirtelen felfutás + minimális szint)
         const isAttackOnset = (delta > this.threshold * 0.45) && (rms > this.threshold);
 
         if (isAttackOnset && (now - this.lastStrumTime) > this.debounceTime) {
@@ -1213,16 +1054,13 @@
       }
 
       evaluateStrum(detectedTime) {
-        if (!this.metronome.isPlaying || this.metronome.scheduledBeatsHistory.length === 0) {
-          return;
-        }
+        if (!this.metronome.isPlaying || this.metronome.scheduledBeatsHistory.length === 0) return;
 
         const effectiveTime = detectedTime + (this.latencyOffsetMs / 1000.0);
 
         let closestBeat = null;
         let minDiffMs = Infinity;
 
-        // Megkeressük a legközelebbi ütemet
         for (const beat of this.metronome.scheduledBeatsHistory) {
           const diffMs = (effectiveTime - beat.time) * 1000;
           if (Math.abs(diffMs) < Math.abs(minDiffMs)) {
@@ -1231,18 +1069,13 @@
           }
         }
 
-        // Ritmuskapu: +/- 190 ms ablak
         if (closestBeat && Math.abs(minDiffMs) <= 190) {
-          // ÜTEM-ZÁROLÁS: Ha ezt az ütemet már leértékeltük, a lecsengő húr nem írhatja felül!
-          if (closestBeat.evaluated) {
-            return;
-          }
-          closestBeat.evaluated = true; // Zároljuk az ütemet
+          if (closestBeat.evaluated) return;
+          closestBeat.evaluated = true;
 
           this.totalStrums++;
           let category = 'perfect';
 
-          // Zeneileg reális ablak: +/- 45 ms a tökéletes találat
           if (Math.abs(minDiffMs) <= 45) {
             category = 'perfect';
             this.perfectStrums++;
@@ -1266,7 +1099,6 @@
       }
     }
 
-    // --- FELÜLETI VEZÉRLÉS ÖSSZEKÖTÉSE ---
     const metronome = new MetronomeEngine();
     let detector = null;
 
@@ -1294,7 +1126,6 @@
     const btnPyramidToggle = document.getElementById('btnPyramidToggle');
     const ladderStatusText = document.getElementById('ladderStatusText');
 
-    // Alsó gitáros blokk elemei
     const micToggleBtn = document.getElementById('micToggleBtn');
     const micLevelBar = document.getElementById('micLevelBar');
     const levelValue = document.getElementById('levelValue');
@@ -1322,9 +1153,7 @@
         bpmInput.blur();
       }
     });
-    bpmInput.addEventListener('blur', () => {
-      updateBpm(parseInt(bpmInput.value, 10) || 120);
-    });
+    bpmInput.addEventListener('blur', () => updateBpm(parseInt(bpmInput.value, 10) || 120));
 
     volumeSlider.addEventListener('input', (e) => {
       const val = parseInt(e.target.value, 10);
@@ -1335,7 +1164,258 @@
     silentToggleBtn.addEventListener('click', () => {
       metronome.isSilent = !metronome.isSilent;
       silentToggleBtn.classList.toggle('active', metronome.isSilent);
-      silentToggleBtn.textContent = metronome.isSilent ? '🔊 Néma mód: BE' : '🔇 Néma mód: KI';
+      silentToggleBtn.textContent = metronome.isSilent ? '🔊 Néma: BE' : '🔇 Néma: KI';
     });
 
-    btnTrainingWheels
+    btnTrainingWheels.addEventListener('click', () => {
+      metronome.trainingWheels = !metronome.trainingWheels;
+      btnTrainingWheels.classList.toggle('active', metronome.trainingWheels);
+    });
+
+    btnGapClick.addEventListener('click', () => {
+      metronome.gapClick = !metronome.gapClick;
+      btnGapClick.classList.toggle('active', metronome.gapClick);
+    });
+
+    btnRandomDrop.addEventListener('click', () => {
+      metronome.randomDrop = !metronome.randomDrop;
+      btnRandomDrop.classList.toggle('active', metronome.randomDrop);
+    });
+
+    function updateLadderSettings() {
+      metronome.ladderStart = parseInt(ladderStartBpm.value, 10) || 80;
+      metronome.ladderTarget = parseInt(ladderTargetBpm.value, 10) || 130;
+      metronome.ladderStep = parseInt(ladderStep.value, 10) || 5;
+    }
+
+    btnLadderToggle.addEventListener('click', () => {
+      metronome.ladderEnabled = !metronome.ladderEnabled;
+      btnLadderToggle.classList.toggle('active', metronome.ladderEnabled);
+      btnLadderToggle.textContent = metronome.ladderEnabled ? 'Létra: BE' : 'Létra: KI';
+      updateLadderSettings();
+    });
+
+    btnPyramidToggle.addEventListener('click', () => {
+      metronome.pyramidEnabled = !metronome.pyramidEnabled;
+      btnPyramidToggle.classList.toggle('active', metronome.pyramidEnabled);
+      btnPyramidToggle.textContent = metronome.pyramidEnabled ? 'Piramis: BE' : 'Piramis: KI';
+    });
+
+    [ladderStartBpm, ladderTargetBpm, ladderStep].forEach(el => {
+      el.addEventListener('change', updateLadderSettings);
+    });
+
+    metronome.onBpmAutoChange = (newBpm, dir) => {
+      bpmSlider.value = newBpm;
+      bpmInput.value = newBpm;
+      ladderStatusText.textContent = dir > 0 ? `▲ (${newBpm})` : `▼ (${newBpm})`;
+    };
+
+    micToggleBtn.addEventListener('click', async () => {
+      if (!detector) {
+        detector = new GuitarDetector(metronome.audioCtx, metronome);
+        detector.latencyOffsetMs = parseInt(latencySlider.value, 10);
+
+        detector.onLevelUpdate = (level) => {
+          const pct = Math.round(level * 100);
+          micLevelBar.style.width = pct + '%';
+          levelValue.textContent = pct + '%';
+        };
+
+        detector.onAccuracyResult = (res) => {
+          accuracyBadge.className = 'accuracy-badge ' + res.category;
+          if (res.category === 'perfect') accuracyBadge.textContent = 'TÖKÉLETES';
+          else if (res.category === 'early') accuracyBadge.textContent = 'SIETSZ!';
+          else accuracyBadge.textContent = 'KÉSEL!';
+
+          const sign = res.diffMs > 0 ? '+' : '';
+          offsetFeedback.textContent = `${sign}${res.diffMs} ms`;
+          accuracyStats.textContent = `${res.scorePercent}% (${res.totalStrums} pengetés)`;
+        };
+      }
+
+      if (!detector.isActive) {
+        const ok = await detector.start();
+        if (ok) {
+          micToggleBtn.classList.add('active');
+          micToggleBtn.textContent = '🎙️ Érzékelő: BE';
+          accuracyBadge.textContent = 'Figyelés...';
+        }
+      } else {
+        detector.stop();
+        micToggleBtn.classList.remove('active');
+        micToggleBtn.textContent = '🎙️ Érzékelő: KI';
+        accuracyBadge.className = 'accuracy-badge';
+        accuracyBadge.textContent = 'Inaktív';
+        micLevelBar.style.width = '0%';
+        levelValue.textContent = '0%';
+      }
+    });
+
+    latencySlider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      offsetLabel.textContent = (val > 0 ? '+' : '') + val + ' ms';
+      if (detector) detector.latencyOffsetMs = val;
+    });
+
+    sensitivitySlider.addEventListener('input', (e) => {
+      const val = parseInt(e.target.value, 10);
+      let label = 'Közepes';
+      if (val < 35) label = 'Alacsony';
+      else if (val > 70) label = 'Magas';
+      sensLabel.textContent = label;
+      if (detector) detector.threshold = 0.14 - ((val / 100) * 0.125);
+    });
+
+    document.querySelectorAll('#timerPresetsContainer .toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#timerPresetsContainer .toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const mins = parseInt(btn.dataset.time, 10);
+        metronome.timerMinutes = mins;
+        timerCountdown.textContent = mins === 0 ? 'Végtelen' : `${mins}:00`;
+      });
+    });
+
+    metronome.onTimerUpdate = (msRemaining) => {
+      const totalSec = Math.ceil(msRemaining / 1000);
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      timerCountdown.textContent = `${m}:${s < 10 ? '0' : ''}${s}`;
+    };
+
+    metronome.onSessionComplete = () => {
+      playBtn.textContent = 'Indítás';
+      playBtn.classList.remove('playing');
+      clearHighlights();
+      timerCountdown.textContent = 'Idő lejárt!';
+    };
+
+    function renderIndicators() {
+      indicatorsContainer.innerHTML = '';
+      const totalSteps = metronome.beatsPerBar * metronome.subdivision;
+
+      for (let i = 0; i < totalSteps; i++) {
+        const col = document.createElement('div');
+        col.className = 'beat-col';
+
+        const isBeat = (i % metronome.subdivision === 0);
+        const dot = document.createElement('div');
+
+        if (isBeat) {
+          dot.className = 'beat-dot main-beat';
+        } else {
+          dot.className = 'beat-dot sub';
+          col.classList.add('is-subdivision');
+        }
+
+        const arrow = document.createElement('div');
+        arrow.className = 'strum-arrow';
+
+        const isDown = (metronome.strumPattern === 'down') || (i % 2 === 0);
+        if (isDown) {
+          col.classList.add('strum-down');
+          arrow.textContent = '↓';
+        } else {
+          col.classList.add('strum-up');
+          arrow.textContent = '↑';
+        }
+
+        col.appendChild(dot);
+        col.appendChild(arrow);
+        indicatorsContainer.appendChild(col);
+      }
+    }
+
+    document.querySelectorAll('#beatsContainer .toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#beatsContainer .toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        metronome.beatsPerBar = parseInt(btn.dataset.beats, 10);
+        metronome.currentStep = 0;
+        renderIndicators();
+      });
+    });
+
+    document.querySelectorAll('#subdivContainer .toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#subdivContainer .toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        metronome.subdivision = parseInt(btn.dataset.sub, 10);
+        metronome.currentStep = 0;
+        renderIndicators();
+      });
+    });
+
+    document.querySelectorAll('#strumContainer .toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#strumContainer .toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        metronome.strumPattern = btn.dataset.strum;
+        renderIndicators();
+      });
+    });
+
+    playBtn.addEventListener('click', () => {
+      if (!metronome.isPlaying) {
+        updateLadderSettings();
+        metronome.start();
+        playBtn.textContent = 'Leállítás';
+        playBtn.classList.add('playing');
+        trainerStatus.textContent = '';
+      } else {
+        metronome.stop();
+        playBtn.textContent = 'Indítás';
+        playBtn.classList.remove('playing');
+        clearHighlights();
+        indicatorsContainer.classList.remove('training-wheels-off');
+        trainerStatus.textContent = '';
+        ladderStatusText.textContent = '';
+      }
+    });
+
+    let tapTimes = [];
+    tapBtn.addEventListener('click', () => {
+      const now = performance.now();
+      if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > 2000) tapTimes = [];
+      tapTimes.push(now);
+      if (tapTimes.length > 4) tapTimes.shift();
+
+      if (tapTimes.length >= 2) {
+        const intervals = [];
+        for (let i = 1; i < tapTimes.length; i++) intervals.push(tapTimes[i] - tapTimes[i - 1]);
+        const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+        updateBpm(Math.round(60000 / avgInterval));
+      }
+    });
+
+    function clearHighlights() {
+      document.querySelectorAll('.beat-col').forEach(col => col.classList.remove('active'));
+    }
+
+    metronome.onTick = (note) => {
+      const cols = indicatorsContainer.children;
+      clearHighlights();
+
+      if (note.wheelsOff) {
+        indicatorsContainer.classList.add('training-wheels-off');
+        trainerStatus.textContent = 'Önálló mód!';
+      } else {
+        indicatorsContainer.classList.remove('training-wheels-off');
+      }
+
+      if (cols[note.step] && !note.muted) {
+        cols[note.step].classList.add('active');
+      }
+    };
+
+    function renderLoop() {
+      metronome.updateVisuals();
+      requestAnimationFrame(renderLoop);
+    }
+    requestAnimationFrame(renderLoop);
+
+    renderIndicators();
+  </script>
+</body>
+</html>
