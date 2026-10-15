@@ -16,9 +16,13 @@
 
       /* Kontrasztos pengetési színek */
       --strum-down: #ff3b56;       /* Élénkpiros */
-      --strum-down-dim: rgba(255, 59, 86, 0.45);
-      --strum-up: #00d2ee;         /* Elektromos ciánkék */
-      --strum-up-dim: rgba(0, 210, 238, 0.45);
+      --strum-down-dim: rgba(255, 59, 86, 0.4);
+      --strum-up: #00d2ee;         /* Elektromos cián */
+      --strum-up-dim: rgba(0, 210, 238, 0.4);
+
+      /* Gyakorló módok jelzőszíne */
+      --mode-active: #bc8cff;
+      --mode-active-border: #d2a8ff;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -39,11 +43,11 @@
       border-radius: 16px;
       padding: 2rem;
       width: 100%;
-      max-width: 460px;
+      max-width: 480px;
       box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
       display: flex;
       flex-direction: column;
-      gap: 1.3rem;
+      gap: 1.25rem;
     }
 
     .tempo-display {
@@ -158,6 +162,12 @@
       gap: 0.5rem;
     }
 
+    .button-grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
     .toggle-btn {
       background: #21262d;
       border: 1px solid var(--border);
@@ -168,12 +178,35 @@
       font-size: 0.85rem;
       font-weight: 500;
       transition: all 0.2s;
+      text-align: center;
     }
 
     .toggle-btn.active {
       background: var(--accent-strong);
       border-color: var(--accent);
       color: var(--text-bright);
+    }
+
+    /* Gyakorló módok egyedi gombstílusa */
+    .practice-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.15rem;
+      padding: 0.55rem 0.25rem;
+    }
+
+    .practice-btn .sub-label {
+      font-size: 0.68rem;
+      opacity: 0.7;
+    }
+
+    .practice-btn.active {
+      background: #3b2361;
+      border-color: var(--mode-active-border);
+      color: #f0f6fc;
+      box-shadow: 0 0 10px rgba(188, 140, 255, 0.2);
     }
 
     /* Pengetési sáv */
@@ -188,6 +221,7 @@
       border-radius: 12px;
       border: 1px solid var(--border);
       overflow-x: auto;
+      position: relative;
     }
 
     .beat-col {
@@ -195,7 +229,7 @@
       flex-direction: column;
       align-items: center;
       gap: 0.45rem;
-      transition: transform 0.08s ease;
+      transition: opacity 0.3s ease, transform 0.08s ease;
     }
 
     .beat-dot {
@@ -229,7 +263,7 @@
       color: var(--strum-up-dim);
     }
 
-    /* Színkezelés: Aktív állapot (villanás) */
+    /* Színkezelés: Aktív állapot */
     .beat-col.active {
       transform: scale(1.15);
     }
@@ -256,6 +290,14 @@
       color: var(--strum-up);
       filter: drop-shadow(0 0 8px var(--strum-up));
       transform: scale(1.3);
+    }
+
+    /* Mankó-mentes / rejtett szubdivíziók (Training wheels lejárta után) */
+    .training-wheels-off .beat-col.is-subdivision {
+      opacity: 0.15;
+    }
+    .training-wheels-off .beat-col.is-subdivision .strum-arrow {
+      visibility: hidden;
     }
 
     .action-row {
@@ -355,6 +397,28 @@
       </div>
     </div>
 
+    <!-- Gyakorló módok (Smart Trainer) -->
+    <div class="control-group">
+      <div class="group-header">
+        <span>Gyakorló edzőfunkciók</span>
+        <span id="trainerStatus" style="color: var(--mode-active); font-weight: 600;"></span>
+      </div>
+      <div class="button-grid-3">
+        <button class="toggle-btn practice-btn" id="btnTrainingWheels">
+          <span>Training Wheel</span>
+          <span class="sub-label">30 mp után önálló</span>
+        </button>
+        <button class="toggle-btn practice-btn" id="btnGapClick">
+          <span>Gap Click</span>
+          <span class="sub-label">3 ütem hang : 1 csend</span>
+        </button>
+        <button class="toggle-btn practice-btn" id="btnRandomDrop">
+          <span>Random Drop</span>
+          <span class="sub-label">Véletlen kihagyás</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Ütem és Pengetés Visszajelző Sáv -->
     <div class="beat-indicators" id="indicators"></div>
 
@@ -376,9 +440,16 @@
         this.strumPattern = 'alternate';
         this.volume = 0.8;
 
+        // Gyakorló módok állapota
+        this.trainingWheels = false;
+        this.gapClick = false;
+        this.randomDrop = false;
+
         this.scheduleAheadTime = 0.12;
         this.nextNoteTime = 0.0;
         this.currentStep = 0;
+        this.totalBarsElapsed = 0;
+        this.playbackStartTime = 0.0;
 
         this.bufferFirst = null;
         this.bufferBeat = null;
@@ -482,26 +553,60 @@
         const totalStepsInBar = this.beatsPerBar * this.subdivision;
         if (this.currentStep >= totalStepsInBar) {
           this.currentStep = 0;
+          this.totalBarsElapsed++;
         }
       }
 
       scheduleNote(stepNumber, time) {
-        this.notesInQueue.push({ step: stepNumber, time: time });
-
-        const source = this.audioCtx.createBufferSource();
         const isBeat = (stepNumber % this.subdivision === 0);
         const isFirstBeat = (stepNumber === 0);
+        const isSub = !isBeat;
 
-        if (isFirstBeat) {
-          source.buffer = this.bufferFirst;
-        } else if (isBeat) {
-          source.buffer = this.bufferBeat;
-        } else {
-          source.buffer = this.bufferSub;
+        // 1. Training Wheel ellenőrzés (30 másodperc elteltével levesszük a mankót)
+        const elapsedSeconds = time - this.playbackStartTime;
+        const wheelsAreOff = this.trainingWheels && (elapsedSeconds >= 30.0);
+
+        // 2. Gap Click logika: minden 4. ütem (3 ütem hang : 1 ütem csend) néma
+        const isGapMutedBar = this.gapClick && (this.totalBarsElapsed % 4 === 3);
+
+        // 3. Random Drop logika: ~18% eséllyel elnyel egy hangot (az 1. főütést soha nem dobja el)
+        let isRandomDropped = false;
+        if (this.randomDrop && !isFirstBeat) {
+          isRandomDropped = (Math.random() < 0.18);
         }
 
-        source.connect(this.masterGain);
-        source.start(time);
+        // Hangkibocsátás meghatározása
+        let shouldPlaySound = true;
+        if (isGapMutedBar) {
+          shouldPlaySound = false; // A 4. ütem teljesen néma
+        } else if (wheelsAreOff && isSub) {
+          shouldPlaySound = false; // A mankó lejárta után a szubdivíziók elnémulnak
+        } else if (isRandomDropped) {
+          shouldPlaySound = false; // Véletlenszerű kihagyás
+        }
+
+        // Esemény továbbítása a vizuális queue-ba
+        this.notesInQueue.push({
+          step: stepNumber,
+          time: time,
+          muted: !shouldPlaySound,
+          wheelsOff: wheelsAreOff
+        });
+
+        // Hangkeltés
+        if (shouldPlaySound) {
+          const source = this.audioCtx.createBufferSource();
+          if (isFirstBeat) {
+            source.buffer = this.bufferFirst;
+          } else if (isBeat) {
+            source.buffer = this.bufferBeat;
+          } else {
+            source.buffer = this.bufferSub;
+          }
+
+          source.connect(this.masterGain);
+          source.start(time);
+        }
       }
 
       scheduler() {
@@ -517,7 +622,9 @@
         this.initAudio();
         this.isPlaying = true;
         this.currentStep = 0;
-        this.nextNoteTime = this.audioCtx.currentTime + 0.05;
+        this.totalBarsElapsed = 0;
+        this.playbackStartTime = this.audioCtx.currentTime + 0.05;
+        this.nextNoteTime = this.playbackStartTime;
         this.notesInQueue = [];
         this.timerWorker.postMessage('start');
       }
@@ -536,7 +643,7 @@
         while (this.notesInQueue.length > 0 && this.notesInQueue[0].time <= currentTime) {
           const currentNote = this.notesInQueue.shift();
           if (this.onTick) {
-            this.onTick(currentNote.step);
+            this.onTick(currentNote);
           }
         }
       }
@@ -554,6 +661,11 @@
     const playBtn = document.getElementById('playBtn');
     const tapBtn = document.getElementById('tapBtn');
     const indicatorsContainer = document.getElementById('indicators');
+    const trainerStatus = document.getElementById('trainerStatus');
+
+    const btnTrainingWheels = document.getElementById('btnTrainingWheels');
+    const btnGapClick = document.getElementById('btnGapClick');
+    const btnRandomDrop = document.getElementById('btnRandomDrop');
 
     function updateBpm(newBpm) {
       metronome.setBpm(newBpm);
@@ -581,6 +693,22 @@
       metronome.setVolume(val / 100);
     });
 
+    // Gyakorló módok kapcsolói
+    btnTrainingWheels.addEventListener('click', () => {
+      metronome.trainingWheels = !metronome.trainingWheels;
+      btnTrainingWheels.classList.toggle('active', metronome.trainingWheels);
+    });
+
+    btnGapClick.addEventListener('click', () => {
+      metronome.gapClick = !metronome.gapClick;
+      btnGapClick.classList.toggle('active', metronome.gapClick);
+    });
+
+    btnRandomDrop.addEventListener('click', () => {
+      metronome.randomDrop = !metronome.randomDrop;
+      btnRandomDrop.classList.toggle('active', metronome.randomDrop);
+    });
+
     function renderIndicators() {
       indicatorsContainer.innerHTML = '';
       const totalSteps = metronome.beatsPerBar * metronome.subdivision;
@@ -589,18 +717,21 @@
         const col = document.createElement('div');
         col.className = 'beat-col';
 
+        const isBeat = (i % metronome.subdivision === 0);
+        if (!isBeat) {
+          col.classList.add('is-subdivision');
+        }
+
         const dot = document.createElement('div');
         dot.className = 'beat-dot';
-        if (i % metronome.subdivision !== 0) {
+        if (!isBeat) {
           dot.classList.add('sub');
         }
 
         const arrow = document.createElement('div');
         arrow.className = 'strum-arrow';
 
-        // Pengetés iránya és osztályozása: az 1. hang (i=0) kötelezően lefelé (piros)
         const isDown = (metronome.strumPattern === 'down') || (i % 2 === 0);
-
         if (isDown) {
           col.classList.add('strum-down');
           arrow.textContent = '↓';
@@ -649,11 +780,14 @@
         metronome.start();
         playBtn.textContent = 'Leállítás';
         playBtn.classList.add('playing');
+        trainerStatus.textContent = '';
       } else {
         metronome.stop();
         playBtn.textContent = 'Indítás';
         playBtn.classList.remove('playing');
         clearHighlights();
+        indicatorsContainer.classList.remove('training-wheels-off');
+        trainerStatus.textContent = '';
       }
     });
 
@@ -683,11 +817,21 @@
       });
     }
 
-    metronome.onTick = (step) => {
+    metronome.onTick = (note) => {
       const cols = indicatorsContainer.children;
       clearHighlights();
-      if (cols[step]) {
-        cols[step].classList.add('active');
+
+      // Training wheel vizuális állapotjelzés 30 másodperc után
+      if (note.wheelsOff) {
+        indicatorsContainer.classList.add('training-wheels-off');
+        trainerStatus.textContent = 'Önálló mód aktív!';
+      } else {
+        indicatorsContainer.classList.remove('training-wheels-off');
+      }
+
+      // Csak akkor villan fel a lépés, ha a hang nem volt némítva (Gap click vagy Drop esetén)
+      if (cols[note.step] && !note.muted) {
+        cols[note.step].classList.add('active');
       }
     };
 
